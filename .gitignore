@@ -1,0 +1,28 @@
+# Build outputs
+/bin/
+/bins/
+/dist/
+*.exe
+*.test
+*.out
+
+# Coverage / profiling
+coverage.out
+coverage.html
+*.cover
+*.prof
+*.pprof
+
+# Local kongkow state (never commit)
+.kongkow/
+store.key
+.env
+.env.*
+
+# IDE / OS junk
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+Thumbs.db
