@@ -3,6 +3,21 @@
 The one list of planned work for the kongkow CLI. Mark an item `done` or
 `deferred` (with the reason and what it waits on). Never delete an item.
 
+## Goal
+
+kongkow is the premium social media scheduler from the internet (the job
+of Buffer or Hootsuite), running locally, for people and AI agents. Like
+komando: an open-source CLI first, then paid apps and a paid cloud.
+
+| Value | What it means for kongkow |
+|---|---|
+| Open source, for transparency | The CLI is AGPL; every publish path is readable code. |
+| Self-hosted, for ownership | Posts, jobs and the vault live in `~/.kongkow`; the scheduler runs on your own machine or server. |
+| Private, for protection | No telemetry; nothing leaves the machine except the publish you asked for. |
+| Secure, for trust | Tokens in the sealed vault; agents never see them; protected destinations need `--yes`. |
+| Cloud, for convenience | Paid kongkow-cloud: sync, hosted scheduler, team approval. Optional, end-to-end encrypted. |
+| Commercial, for sustainability | Paid apps and cloud; commercial licence for the CLI. |
+
 ## Milestone 1: safe scheduled jobs
 
 | Item | Status |
@@ -30,10 +45,24 @@ The one list of planned work for the kongkow CLI. Mark an item `done` or
 | `post status --run` exit code when a job fails | open |
 | Release workflow (tagged binaries for `install.sh`) | open, needs owner yes to tag |
 
+## Milestone 4: the killer feature, locally
+
+| Item | Status |
+|---|---|
+| Publish to Mastodon and Bluesky (open APIs first) | open |
+| Publish to X and LinkedIn | open, needs owner's developer apps (may cost money) |
+| One post to many destinations: `post publish NAME --to A,B` | open |
+| Per-network text limits and checks before publish | open |
+| `kongkow schedule run --watch`: a local scheduler loop, plus a launchd/systemd example | open |
+| Queue slots (post times per destination, `post queue`) | open |
+| Self-host guide: run the scheduler on your own server | open |
+| No-telemetry statement in README and SECURITY.md | open |
+
 ## Paid plan (after the CLI is solid)
 
 | Item | Status |
 |---|---|
 | `efolusi/kongkow-apps`: Mac, iPhone, iPad app, built like komando-apps | deferred: waits on milestones 1-3 |
 | `efolusi/kongkow-cloud`: API, account, sync, billing, website, built like komando-cloud | deferred: waits on milestones 1-3 |
-| More networks (X, Mastodon, Bluesky, LinkedIn) | deferred: product decision, after paid plan shape is set |
+| Cloud sync end-to-end encrypted, hosted scheduler, team approval | deferred: part of kongkow-cloud |
+| More networks (X, Mastodon, Bluesky, LinkedIn) | moved up: see milestone 4 (the killer feature needs them) |
