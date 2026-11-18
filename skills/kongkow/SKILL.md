@@ -45,5 +45,6 @@ kongkow post publish hello --to local
 kongkow dest add tg --kind telegram --target CHAT_ID --secret-ref secret:tg_bot
 kongkow post schedule hello --to local --at '2030-01-01 09:00'
 kongkow post status --run
+kongkow post cancel JOB      # only a pending job
 kongkow audit --limit 20
 ```

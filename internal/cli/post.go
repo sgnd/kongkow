@@ -29,6 +29,7 @@ func postCmd() *cobra.Command {
 		postPublishCmd(),
 		postScheduleCmd(),
 		postStatusCmd(),
+		postCancelCmd(),
 	)
 	return c
 }
@@ -489,6 +490,22 @@ func runDueJobs() ([]jobRow, error) {
 			ran = append(ran, row)
 			continue
 		}
+		claimed := false
+		if err := store.Update(func(s *store.State) error {
+			jj := s.Jobs[id]
+			if jj == nil || jj.Status != store.JobPending {
+				return nil
+			}
+			jj.Status = store.JobRunning
+			jj.UpdatedAt = time.Now().UTC()
+			claimed = true
+			return nil
+		}); err != nil {
+			return ran, err
+		}
+		if !claimed {
+			continue
+		}
 		res, pubErr := dest.Publish(context.Background(), d, dest.Content{
 			Name: p.Name, Title: p.Title, Body: p.Body, Media: p.Media,
 		}, vault.Resolve)
@@ -536,4 +553,38 @@ func newJobID() (string, error) {
 		id = id[:12]
 	}
 	return "job_" + id, nil
+}
+
+func postCancelCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "cancel JOB",
+		Short: "Cancel a pending scheduled publish",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(_ *cobra.Command, args []string) error {
+			id := args[0]
+			err := store.Update(func(s *store.State) error {
+				j := s.Jobs[id]
+				if j == nil {
+					return out.Errf(out.ExitNotFound, "JOB_NOT_FOUND",
+						"check the id; `kongkow post status` shows jobs",
+						"job %q is not in the store", id)
+				}
+				if j.Status != store.JobPending {
+					return out.Errf(out.ExitConflict, "JOB_NOT_PENDING",
+						"only a pending job can be cancelled",
+						"job %q is %s", id, j.Status)
+				}
+				j.Status = store.JobCancelled
+				j.UpdatedAt = time.Now().UTC()
+				return nil
+			})
+			if err != nil {
+				return err
+			}
+			st, _ := store.Load()
+			audit(st, "post cancel", true, map[string]any{"id": id})
+			out.P.Print("post cancel", map[string]any{"id": id, "action": "cancelled"}, nil)
+			return nil
+		},
+	}
 }
