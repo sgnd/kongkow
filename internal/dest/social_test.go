@@ -88,15 +88,16 @@ func TestMastodonNeedsHTTPS(t *testing.T) {
 
 func TestBlueskyPublish(t *testing.T) {
 	f := newFakeAPI(t, map[string]string{
-		"/xrpc/com.atproto.server.createSession": `{"accessJwt":"JWT","did":"did:plc:me","handle":"me.bsky.social"}`,
-		"/xrpc/com.atproto.repo.createRecord":    `{"uri":"at://did:plc:me/app.bsky.feed.post/1"}`,
+		"/xrpc/com.atproto.server.createSession":   `{"accessJwt":"JWT","did":"did:plc:me","handle":"me.bsky.social"}`,
+		"/xrpc/com.atproto.repo.createRecord":      `{"uri":"at://did:plc:me/app.bsky.feed.post/1"}`,
+		"/xrpc/com.atproto.identity.resolveHandle": `{"did":"did:plc:friend"}`,
 	})
 	old := bskyService
 	bskyService = f.srv.URL
 	t.Cleanup(func() { bskyService = old })
 
 	d := &store.Dest{Name: "b", Kind: store.DestBluesky, Target: "me.bsky.social", SecretRef: "secret:b"}
-	r, err := Publish(t.Context(), d, Content{Body: "hello"}, secretResolver)
+	r, err := Publish(t.Context(), d, Content{Body: "hello @friend.bsky.social"}, secretResolver)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -111,8 +112,12 @@ func TestBlueskyPublish(t *testing.T) {
 	if rec["repo"] != "did:plc:me" || f.auth["/xrpc/com.atproto.repo.createRecord"] != "Bearer JWT" {
 		t.Fatalf("record %v", rec)
 	}
-	if text := rec["record"].(map[string]any)["text"]; text != "hello" {
-		t.Fatalf("text %v", text)
+	record := rec["record"].(map[string]any)
+	if record["text"] != "hello @friend.bsky.social" {
+		t.Fatalf("text %v", record["text"])
+	}
+	if fs, _ := record["facets"].([]any); len(fs) != 1 {
+		t.Fatalf("facets %v", record["facets"])
 	}
 	tr, err := Test(t.Context(), d, secretResolver)
 	if err != nil || tr.Detail != "account @me.bsky.social" {

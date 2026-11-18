@@ -8,7 +8,7 @@ import (
 	"github.com/sgnd/kongkow/internal/out"
 )
 
-const guideText = `kongkow — local-first posts and publish destinations
+const guideText = `kongkow: draft, schedule and publish your social media posts, locally
 
 kongkow keeps content and destination credentials on this computer
 (~/.kongkow by default). It is not a thin client of efolusi.com.

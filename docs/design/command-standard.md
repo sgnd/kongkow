@@ -34,10 +34,10 @@ Top-level commands include: `version`, `doctor`, `list`, `guide`, `secret`,
 
 ## Flags
 
-- `-o json|text` — output format (default: text at a terminal, json when piped)
-- `--dry-run` — show what would change / publish without doing it
-- `--yes` — person confirmed a protected action
-- `--reveal` — person at a terminal asked to see a secret
+- `-o json|text`: output format (default: text at a terminal, json when piped)
+- `--dry-run`: show what would change / publish without doing it
+- `--yes`: person confirmed a protected action
+- `--reveal`: person at a terminal asked to see a secret
 
 No `--json`, `--quiet` or TUI.
 

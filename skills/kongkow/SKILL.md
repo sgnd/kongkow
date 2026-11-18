@@ -1,6 +1,6 @@
 ---
 name: kongkow
-description: Manage local posts, collections, bookmarks, publish destinations (Telegram, Mastodon, Bluesky, file) and vault secrets through the kongkow CLI. Use when the user mentions kongkow, drafts, publishing to Telegram, Mastodon or Bluesky, or local content destinations — not for SSH/servers (that is komando).
+description: Manage local posts, collections, bookmarks, publish destinations (Telegram, Mastodon, Bluesky, file) and vault secrets through the kongkow CLI. Use when the user mentions kongkow, drafts, publishing to Telegram, Mastodon or Bluesky, or local content destinations. Not for SSH or servers (that is komando).
 ---
 
 # kongkow
@@ -8,12 +8,12 @@ description: Manage local posts, collections, bookmarks, publish destinations (T
 kongkow is a local-first CLI for posts and publish destinations. Do all
 content and destination work through it. Do not call Telegram, Mastodon or Bluesky APIs or write
 bot tokens yourself when kongkow has a command. Do not use it for SSH or
-servers — that is komando.
+servers: that is komando.
 
 ## Start every session
 
-1. `kongkow guide` — playbook for this version.
-2. `kongkow list` — posts, destinations, collections, bookmarks.
+1. `kongkow guide`: playbook for this version.
+2. `kongkow list`: posts, destinations, collections, bookmarks.
 3. `kongkow doctor` when unsure about the store or vault.
 
 Install (when releases exist):
