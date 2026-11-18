@@ -3,6 +3,11 @@
 All notable changes to kongkow. Each release has a section `## [X.Y.Z]`;
 the release workflow takes its notes from that section.
 
+## [Unreleased]
+
+- Queue slots: `dest edit NAME --slots 09:00,18:00` sets daily times, and
+  `post queue NAME --to DEST` takes the next free one.
+
 ## [0.0.1]
 
 - Publish to Mastodon (instance + access token) and Bluesky (handle + app

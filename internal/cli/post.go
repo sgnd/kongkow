@@ -31,6 +31,7 @@ func postCmd() *cobra.Command {
 		postRmCmd(),
 		postPublishCmd(),
 		postScheduleCmd(),
+		postQueueCmd(),
 		postStatusCmd(),
 		postCancelCmd(),
 	)
@@ -415,34 +416,13 @@ func postScheduleCmd() *cobra.Command {
 				if err != nil {
 					return err
 				}
-				now := time.Now().UTC()
-				for _, d := range dests {
-					id, err := newJobID()
-					if err != nil {
-						return err
-					}
-					s.Jobs[id] = &store.Job{
-						ID: id, Post: args[0], Dest: d.Name, At: when.UTC(),
-						Status: store.JobPending, CreatedAt: now, UpdatedAt: now,
-					}
-					rows = append(rows, map[string]any{
-						"id": id, "post": args[0], "dest": d.Name, "at": when.UTC(), "action": "scheduled",
-					})
-				}
-				return nil
+				rows, err = addJobs(s, args[0], dests, func(*store.Dest) (time.Time, error) { return when, nil })
+				return err
 			})
 			if err != nil {
 				return err
 			}
-			st, _ := store.Load()
-			for _, r := range rows {
-				audit(st, "post schedule", true, map[string]any{"id": r["id"], "post": r["post"], "dest": r["dest"], "at": r["at"]})
-			}
-			if len(rows) == 1 {
-				out.P.Print("post schedule", rows[0], nil)
-			} else {
-				out.P.Print("post schedule", map[string]any{"jobs": rows}, nil)
-			}
+			printJobs("post schedule", rows)
 			return nil
 		},
 	}
@@ -740,4 +720,41 @@ func checkLength(d *store.Dest, c dest.Content) error {
 			"shorten the post with `kongkow post edit NAME`", "%v", err)
 	}
 	return nil
+}
+
+// addJobs adds one pending job per destination, at the time at gives it.
+func addJobs(s *store.State, post string, dests []*store.Dest, at func(*store.Dest) (time.Time, error)) ([]map[string]any, error) {
+	var rows []map[string]any
+	now := time.Now().UTC()
+	for _, d := range dests {
+		when, err := at(d)
+		if err != nil {
+			return nil, err
+		}
+		id, err := newJobID()
+		if err != nil {
+			return nil, err
+		}
+		s.Jobs[id] = &store.Job{
+			ID: id, Post: post, Dest: d.Name, At: when.UTC(),
+			Status: store.JobPending, CreatedAt: now, UpdatedAt: now,
+		}
+		rows = append(rows, map[string]any{
+			"id": id, "post": post, "dest": d.Name, "at": when.UTC(), "action": "scheduled",
+		})
+	}
+	return rows, nil
+}
+
+// printJobs audits and prints new jobs: one row as before, several under "jobs".
+func printJobs(command string, rows []map[string]any) {
+	st, _ := store.Load()
+	for _, r := range rows {
+		audit(st, command, true, map[string]any{"id": r["id"], "post": r["post"], "dest": r["dest"], "at": r["at"]})
+	}
+	if len(rows) == 1 {
+		out.P.Print(command, rows[0], nil)
+		return
+	}
+	out.P.Print(command, map[string]any{"jobs": rows}, nil)
 }

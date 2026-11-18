@@ -23,7 +23,7 @@ func destCmd() *cobra.Command {
 }
 
 func destAddCmd() *cobra.Command {
-	var kind, target, secretRef, notes string
+	var kind, target, secretRef, notes, slots string
 	var protected bool
 	c := &cobra.Command{
 		Use:   "add NAME",
@@ -34,15 +34,19 @@ func destAddCmd() *cobra.Command {
 			if err := validateDestKind(kind, target, secretRef); err != nil {
 				return err
 			}
+			slotList, err := parseSlots(slots)
+			if err != nil {
+				return err
+			}
 			now := time.Now().UTC()
-			err := store.Update(func(s *store.State) error {
+			err = store.Update(func(s *store.State) error {
 				if s.Dests[name] != nil {
 					return out.Errf(out.ExitConflict, "EXISTS", "use `kongkow dest edit "+name+"` or pick another name",
 						"destination %q already exists", name)
 				}
 				s.Dests[name] = &store.Dest{
 					Name: name, Kind: kind, Target: target, SecretRef: secretRef,
-					Protected: protected, Notes: notes, CreatedAt: now, UpdatedAt: now,
+					Protected: protected, Notes: notes, Slots: slotList, CreatedAt: now, UpdatedAt: now,
 				}
 				return nil
 			})
@@ -60,11 +64,12 @@ func destAddCmd() *cobra.Command {
 	c.Flags().StringVar(&secretRef, "secret-ref", "", "secret:NAME for the token: bot token (telegram), access token (mastodon), app password (bluesky)")
 	c.Flags().StringVar(&notes, "notes", "", "notes")
 	c.Flags().BoolVar(&protected, "protected", false, "changes and publishes need --yes")
+	c.Flags().StringVar(&slots, "slots", "", slotsHelp)
 	return c
 }
 
 func destEditCmd() *cobra.Command {
-	var target, secretRef, notes string
+	var target, secretRef, notes, slots string
 	var protected bool
 	c := &cobra.Command{
 		Use:   "edit NAME",
@@ -72,7 +77,11 @@ func destEditCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]
-			err := store.Update(func(s *store.State) error {
+			slotList, err := parseSlots(slots)
+			if err != nil {
+				return err
+			}
+			err = store.Update(func(s *store.State) error {
 				d := s.Dests[name]
 				if d == nil {
 					return out.Errf(out.ExitNotFound, "DEST_NOT_FOUND",
@@ -94,6 +103,9 @@ func destEditCmd() *cobra.Command {
 				if cmd.Flags().Changed("protected") {
 					d.Protected = protected
 				}
+				if cmd.Flags().Changed("slots") {
+					d.Slots = slotList
+				}
 				if err := validateDestKind(d.Kind, d.Target, d.SecretRef); err != nil {
 					return err
 				}
@@ -113,6 +125,7 @@ func destEditCmd() *cobra.Command {
 	c.Flags().StringVar(&secretRef, "secret-ref", "", "secret:NAME")
 	c.Flags().StringVar(&notes, "notes", "", "notes")
 	c.Flags().BoolVar(&protected, "protected", false, "require --yes for changes and publishes")
+	c.Flags().StringVar(&slots, "slots", "", slotsHelp+"; empty clears them")
 	return c
 }
 
