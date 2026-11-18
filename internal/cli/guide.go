@@ -27,6 +27,7 @@ Posts
   kongkow post schedule NAME --to DEST[,DEST...] --at '2006-01-02 15:04'
   kongkow post cancel JOB
   kongkow post status [--run]  list jobs; --run publishes due ones
+  kongkow post status --run --every 1m   keep running as a scheduler (docs/self-host.md)
 
 Collections and bookmarks
   kongkow collection add NAME [--title T]

@@ -3,7 +3,10 @@ package cli
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -483,11 +486,26 @@ func (r statusResult) Text() string {
 
 func postStatusCmd() *cobra.Command {
 	var run bool
+	var every time.Duration
 	c := &cobra.Command{
 		Use:   "status",
 		Short: "Show scheduled publish jobs (optionally run due ones)",
 		Args:  cobra.NoArgs,
-		RunE: func(_ *cobra.Command, _ []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			if every != 0 {
+				if !run {
+					return out.Usage("--every needs --run")
+				}
+				if every < minEvery {
+					return out.Usage("--every must be at least %s", minEvery)
+				}
+				if g.dryRun {
+					return out.Usage("--every does not combine with --dry-run")
+				}
+				ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
+				defer stop()
+				return watchJobs(ctx, every)
+			}
 			var ran []jobRow
 			if run && !g.dryRun {
 				var err error
@@ -521,7 +539,33 @@ func postStatusCmd() *cobra.Command {
 		},
 	}
 	c.Flags().BoolVar(&run, "run", false, "publish jobs whose --at time has passed")
+	c.Flags().DurationVar(&every, "every", 0, "with --run: keep running, checking this often (like 1m); stop with Ctrl-C")
 	return c
+}
+
+// minEvery keeps a watch loop from hammering the store; tests lower it.
+var minEvery = 10 * time.Second
+
+// watchJobs runs due jobs now and then every interval until ctx ends. It
+// prints one envelope per round in which a job ran; a failed job does not
+// stop the loop, a broken store does.
+func watchJobs(ctx context.Context, every time.Duration) error {
+	t := time.NewTicker(every)
+	defer t.Stop()
+	for {
+		ran, err := runDueJobs()
+		if err != nil {
+			return err
+		}
+		if len(ran) > 0 {
+			out.P.Print("post status", statusResult{Jobs: []jobRow{}, Ran: ran}, nil)
+		}
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-t.C:
+		}
+	}
 }
 
 func runDueJobs() ([]jobRow, error) {

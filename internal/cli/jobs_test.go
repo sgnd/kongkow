@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -196,4 +197,28 @@ func TestPublishAndScheduleToMany(t *testing.T) {
 		t.Fatalf("want 2 jobs, got %d", len(st.Jobs))
 	}
 	run(t, out.ExitUsage, "post", "publish", "n1", "--to", " , ")
+}
+
+func TestWatchRunsDueJobs(t *testing.T) {
+	outDir := setupJobs(t)
+	soon := time.Now().Add(300 * time.Millisecond).Format(time.RFC3339Nano)
+	run(t, 0, "post", "schedule", "n1", "--to", "f1", "--at", soon)
+	ctx, cancel := context.WithTimeout(t.Context(), 2*time.Second)
+	defer cancel()
+	if err := watchJobs(ctx, 100*time.Millisecond); err != nil {
+		t.Fatal(err)
+	}
+	if j := onlyJob(t); j.Status != store.JobDone {
+		t.Fatalf("status %q", j.Status)
+	}
+	if ents, _ := os.ReadDir(outDir); len(ents) != 1 {
+		t.Fatalf("want 1 file, got %d", len(ents))
+	}
+}
+
+func TestWatchFlagRules(t *testing.T) {
+	setupJobs(t)
+	run(t, out.ExitUsage, "post", "status", "--every", "1m")
+	run(t, out.ExitUsage, "post", "status", "--run", "--every", "1s")
+	run(t, out.ExitUsage, "post", "status", "--run", "--every", "1m", "--dry-run")
 }

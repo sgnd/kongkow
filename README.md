@@ -65,6 +65,16 @@ kongkow dest add bsky --kind bluesky --target you.bsky.social --secret-ref secre
 kongkow post publish hello --to masto,bsky --dry-run
 ```
 
+## Run the scheduler
+
+`kongkow post status --run --every 1m` sends scheduled posts on time.
+Run it under launchd or systemd on your own machine:
+[docs/self-host.md](docs/self-host.md).
+
+## Privacy
+
+No telemetry. kongkow sends nothing except the publishes you ask for.
+
 ## Agents
 
 See [AGENTS.md](AGENTS.md) and `skills/kongkow/SKILL.md`. Prefer `-o json`,

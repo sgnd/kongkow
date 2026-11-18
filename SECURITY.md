@@ -25,6 +25,12 @@ Include what you found, how to reproduce it, and what an attacker could do with 
 - `secret show --reveal` works only for a person at a terminal.
 - Do not read `~/.kongkow`, `store.key` or `.env` files on this computer as an agent, and do not change `KONGKOW_HOME`.
 
+## Privacy
+
+kongkow has no telemetry. It sends nothing anywhere except the publish
+or `dest test` you ask for, to the destination you named. There is no
+kongkow account and no call home.
+
 ## Supported versions
 
 Only the latest release gets security fixes. Update with the install script or from [Releases](https://github.com/sgnd/kongkow/releases).
