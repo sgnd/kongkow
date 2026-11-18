@@ -3,7 +3,7 @@
 All notable changes to kongkow. Each release has a section `## [X.Y.Z]`;
 the release workflow takes its notes from that section.
 
-## [Unreleased]
+## [0.1.0]
 
 - Images in `--media` are uploaded to Mastodon and Bluesky (up to 4 JPEG,
   PNG, GIF or WebP files; 1 MB each on Bluesky). Every file is checked
