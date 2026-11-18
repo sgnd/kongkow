@@ -222,3 +222,16 @@ func TestWatchFlagRules(t *testing.T) {
 	run(t, out.ExitUsage, "post", "status", "--run", "--every", "1s")
 	run(t, out.ExitUsage, "post", "status", "--run", "--every", "1m", "--dry-run")
 }
+
+func TestMediaCheckedBeforeSend(t *testing.T) {
+	setupJobs(t)
+	txt := filepath.Join(t.TempDir(), "notes.txt")
+	if err := os.WriteFile(txt, []byte("not an image"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	run(t, 0, "post", "draft", "pic", "--body", "hi", "--media", txt)
+	run(t, 0, "dest", "add", "bs", "--kind", "bluesky", "--target", "me.bsky.social", "--secret-ref", "secret:bs")
+	run(t, out.ExitUsage, "post", "publish", "pic", "--to", "bs", "--dry-run")
+	run(t, out.ExitUsage, "post", "schedule", "pic", "--to", "bs", "--at", "2030-01-01 10:00")
+	run(t, 0, "post", "publish", "pic", "--to", "f1") // a file sink takes any path
+}

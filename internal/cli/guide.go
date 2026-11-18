@@ -42,6 +42,8 @@ Destinations
   kongkow dest add NAME --kind mastodon --target https://INSTANCE --secret-ref secret:TOKEN
   kongkow dest add NAME --kind bluesky --target HANDLE --secret-ref secret:APP_PASSWORD
   Text limits: Mastodon 500, Bluesky 300 characters; checked before sending.
+  Images (--media): up to 4 JPEG, PNG, GIF or WebP files are uploaded to
+  Mastodon and Bluesky (Bluesky: 1 MB each); other destinations list the paths.
   kongkow dest list | show NAME | edit NAME | rm NAME | test NAME
   kongkow dest edit NAME --slots 09:00,13:00,18:00   daily times for post queue
   Never put bot tokens on the command line: store them with secret set first.

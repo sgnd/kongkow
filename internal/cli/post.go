@@ -380,6 +380,9 @@ func checkDests(s *store.State, names []string, c dest.Content, doing string) ([
 		if err := checkLength(d, c); err != nil {
 			return nil, err
 		}
+		if err := checkMedia(d, c); err != nil {
+			return nil, err
+		}
 		ds = append(ds, d)
 	}
 	return ds, nil
@@ -718,6 +721,15 @@ func checkLength(d *store.Dest, c dest.Content) error {
 	if err := dest.CheckLength(d, c); err != nil {
 		return out.Errf(out.ExitUsage, "POST_TOO_LONG",
 			"shorten the post with `kongkow post edit NAME`", "%v", err)
+	}
+	return nil
+}
+
+// checkMedia refuses media d's network cannot take, before anything is sent.
+func checkMedia(d *store.Dest, c dest.Content) error {
+	if err := dest.CheckMedia(d, c); err != nil {
+		return out.Errf(out.ExitUsage, "MEDIA_NOT_ALLOWED",
+			"change the images with `kongkow post edit NAME --media a.jpg,b.png`", "%v", err)
 	}
 	return nil
 }

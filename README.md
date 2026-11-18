@@ -12,7 +12,8 @@ Code, Codex, Cursor, Gemini CLI, your own bot) can both use safely:
 
 - **One place** for drafts, destinations, collections and bookmarks.
 - **Write once, send to many.** Telegram, Mastodon, Bluesky and a file
-  folder today. Dry-run first, then publish.
+  folder today, with images on Mastodon and Bluesky. Dry-run first, then
+  publish.
 - **Your own schedule.** Daily post times per destination, and a
   scheduler that runs on your machine.
 - **Tokens stay in an encrypted vault** in `~/.kongkow`, sealed with a
