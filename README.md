@@ -62,7 +62,7 @@ kongkow secret set masto
 kongkow dest add masto --kind mastodon --target https://mastodon.social --secret-ref secret:masto
 kongkow secret set bsky
 kongkow dest add bsky --kind bluesky --target you.bsky.social --secret-ref secret:bsky
-kongkow post publish hello --to bsky --dry-run
+kongkow post publish hello --to masto,bsky --dry-run
 ```
 
 ## Agents

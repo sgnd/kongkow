@@ -163,3 +163,37 @@ func TestTooLongForBluesky(t *testing.T) {
 	run(t, out.ExitUsage, "post", "schedule", "long", "--to", "bs", "--at", "2030-01-01 10:00")
 	run(t, out.ExitUsage, "dest", "add", "m", "--kind", "mastodon", "--target", "http://mastodon.social", "--secret-ref", "secret:m")
 }
+
+func TestPublishAndScheduleToMany(t *testing.T) {
+	outDir := setupJobs(t)
+	other := filepath.Join(t.TempDir(), "other")
+	run(t, 0, "dest", "add", "f2", "--kind", "file", "--target", other)
+
+	// An unknown name stops everything before anything is sent.
+	run(t, out.ExitNotFound, "post", "publish", "n1", "--to", "f1,nope")
+	if ents, _ := os.ReadDir(outDir); len(ents) != 0 {
+		t.Fatalf("sent before checking all destinations: %d files", len(ents))
+	}
+
+	env := runJSON(t, 0, "post", "publish", "n1", "--to", "f1, f2,f1")
+	rows, _ := env["data"].(map[string]any)["results"].([]any)
+	if len(rows) != 2 {
+		t.Fatalf("want 2 results, got %v", env["data"])
+	}
+	for _, dir := range []string{outDir, other} {
+		if ents, _ := os.ReadDir(dir); len(ents) != 1 {
+			t.Fatalf("%s: want 1 file, got %d", dir, len(ents))
+		}
+	}
+
+	past := time.Now().Add(-time.Hour).Format(time.RFC3339)
+	run(t, 0, "post", "schedule", "n1", "--to", "f1,f2", "--at", past)
+	st, err := store.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(st.Jobs) != 2 {
+		t.Fatalf("want 2 jobs, got %d", len(st.Jobs))
+	}
+	run(t, out.ExitUsage, "post", "publish", "n1", "--to", " , ")
+}

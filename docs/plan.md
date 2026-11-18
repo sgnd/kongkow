@@ -53,7 +53,7 @@ komando: an open-source CLI first, then paid apps and a paid cloud.
 |---|---|
 | Publish to Mastodon and Bluesky (open APIs first) | done (text only; media upload is a separate item) |
 | Publish to X and LinkedIn | open, needs owner's developer apps (may cost money) |
-| One post to many destinations: `post publish NAME --to A,B` | open |
+| One post to many destinations: `post publish NAME --to A,B` | done: also `post schedule`; all checked before any is sent |
 | Per-network text limits and checks before publish | done for Mastodon (500) and Bluesky (300) |
 | Media upload to Mastodon and Bluesky (today media paths are listed as text) | open |
 | Bluesky links and mentions as rich-text facets | open |
