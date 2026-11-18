@@ -1,4 +1,4 @@
-# Every version is a GitHub release: push a tag like v0.1.0, and this runs
+# Every version is a GitHub release: push a tag like v0.0.1, and this runs
 # every check, then publishes the binaries. install.sh downloads the newest
 # release.
 name: Release

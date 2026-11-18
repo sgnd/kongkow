@@ -3,7 +3,10 @@ package cli
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -265,11 +268,12 @@ func postPublishCmd() *cobra.Command {
 	var to string
 	c := &cobra.Command{
 		Use:   "publish NAME",
-		Short: "Publish a post to a destination",
+		Short: "Publish a post to one or more destinations",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
-			if to == "" {
-				return out.Usage("need --to DEST")
+			names, err := destNames(to)
+			if err != nil {
+				return err
 			}
 			st, err := store.Load()
 			if err != nil {
@@ -281,78 +285,149 @@ func postPublishCmd() *cobra.Command {
 					"check the name; `kongkow post list` shows posts",
 					"post %q is not in the store", args[0])
 			}
-			d := st.Dests[to]
-			if d == nil {
-				return out.Errf(out.ExitNotFound, "DEST_NOT_FOUND",
-					"check the name; `kongkow dest list` shows destinations",
-					"destination %q is not in the store", to)
-			}
-			if err := protectDest(d, "publishing"); err != nil {
+			content := dest.Content{Name: p.Name, Title: p.Title, Body: p.Body, Media: p.Media}
+			// Every destination is checked before anything is sent, so a
+			// bad name or a too-long post never leaves a half-done publish.
+			dests, err := checkDests(st, names, content, "publishing")
+			if err != nil {
 				return err
 			}
-			content := dest.Content{Name: p.Name, Title: p.Title, Body: p.Body, Media: p.Media}
 			if g.dryRun {
-				out.P.Print("post publish", map[string]any{
-					"name": p.Name, "dest": d.Name, "kind": d.Kind, "action": "would_publish",
-				}, nil)
+				rows := []map[string]any{}
+				for _, d := range dests {
+					rows = append(rows, map[string]any{
+						"name": p.Name, "dest": d.Name, "kind": d.Kind, "action": "would_publish",
+					})
+				}
+				printPublish(rows)
 				return nil
 			}
-			res, err := dest.Publish(context.Background(), d, content, vault.Resolve)
-			if err != nil {
-				audit(st, "post publish", false, map[string]any{"name": p.Name, "dest": d.Name, "error": err.Error()})
-				return err
+			rows := []map[string]any{}
+			failed := 0
+			var lastErr error
+			for _, d := range dests {
+				res, err := dest.Publish(context.Background(), d, content, vault.Resolve)
+				if err != nil {
+					failed++
+					lastErr = err
+					audit(st, "post publish", false, map[string]any{"name": p.Name, "dest": d.Name, "error": err.Error()})
+					rows = append(rows, map[string]any{
+						"name": p.Name, "dest": d.Name, "kind": d.Kind, "action": "failed", "error": err.Error(),
+					})
+					continue
+				}
+				audit(st, "post publish", true, map[string]any{"name": p.Name, "dest": d.Name, "kind": d.Kind})
+				rows = append(rows, map[string]any{
+					"name": p.Name, "dest": d.Name, "kind": d.Kind, "action": "published",
+					"path": res.Path, "detail": res.Detail, "target": res.Target,
+				})
 			}
-			audit(st, "post publish", true, map[string]any{"name": p.Name, "dest": d.Name, "kind": d.Kind})
-			out.P.Print("post publish", map[string]any{
-				"name": p.Name, "dest": d.Name, "kind": d.Kind, "action": "published",
-				"path": res.Path, "detail": res.Detail, "target": res.Target,
-			}, nil)
+			if len(dests) == 1 && lastErr != nil {
+				return lastErr
+			}
+			printPublish(rows)
+			if failed > 0 {
+				return exitCode(1) // the rows above say which destination failed and why
+			}
 			return nil
 		},
 	}
-	c.Flags().StringVar(&to, "to", "", "destination name")
+	c.Flags().StringVar(&to, "to", "", "destination name, or several separated by commas")
 	return c
+}
+
+// printPublish prints one row as before, or all rows under "results".
+func printPublish(rows []map[string]any) {
+	if len(rows) == 1 {
+		out.P.Print("post publish", rows[0], nil)
+		return
+	}
+	out.P.Print("post publish", map[string]any{"results": rows}, nil)
+}
+
+// destNames splits --to A,B into names, without blanks or repeats.
+func destNames(to string) ([]string, error) {
+	var names []string
+	seen := map[string]bool{}
+	for _, n := range strings.Split(to, ",") {
+		n = strings.TrimSpace(n)
+		if n == "" || seen[n] {
+			continue
+		}
+		seen[n] = true
+		names = append(names, n)
+	}
+	if len(names) == 0 {
+		return nil, out.Usage("need --to DEST (or --to A,B for several)")
+	}
+	return names, nil
+}
+
+// checkDests finds each destination and checks protection and length.
+func checkDests(s *store.State, names []string, c dest.Content, doing string) ([]*store.Dest, error) {
+	var ds []*store.Dest
+	for _, n := range names {
+		d := s.Dests[n]
+		if d == nil {
+			return nil, out.Errf(out.ExitNotFound, "DEST_NOT_FOUND",
+				"check the name; `kongkow dest list` shows destinations",
+				"destination %q is not in the store", n)
+		}
+		if err := protectDest(d, doing); err != nil {
+			return nil, err
+		}
+		if err := checkLength(d, c); err != nil {
+			return nil, err
+		}
+		ds = append(ds, d)
+	}
+	return ds, nil
 }
 
 func postScheduleCmd() *cobra.Command {
 	var to, at string
 	c := &cobra.Command{
 		Use:   "schedule NAME",
-		Short: "Schedule a local publish job",
+		Short: "Schedule a local publish job (one per destination)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
-			if to == "" || at == "" {
+			if at == "" {
 				return out.Usage("need --to DEST and --at TIME")
+			}
+			names, err := destNames(to)
+			if err != nil {
+				return err
 			}
 			when, err := parseTime(at)
 			if err != nil {
 				return err
 			}
-			var jobID string
+			var rows []map[string]any
 			err = store.Update(func(s *store.State) error {
-				if s.Posts[args[0]] == nil {
+				p := s.Posts[args[0]]
+				if p == nil {
 					return out.Errf(out.ExitNotFound, "POST_NOT_FOUND",
 						"check the name; `kongkow post list` shows posts",
 						"post %q is not in the store", args[0])
 				}
-				d := s.Dests[to]
-				if d == nil {
-					return out.Errf(out.ExitNotFound, "DEST_NOT_FOUND",
-						"check the name; `kongkow dest list` shows destinations",
-						"destination %q is not in the store", to)
-				}
-				if err := protectDest(d, "scheduling a publish"); err != nil {
-					return err
-				}
-				id, err := newJobID()
+				content := dest.Content{Name: p.Name, Title: p.Title, Body: p.Body, Media: p.Media}
+				dests, err := checkDests(s, names, content, "scheduling a publish")
 				if err != nil {
 					return err
 				}
-				jobID = id
 				now := time.Now().UTC()
-				s.Jobs[id] = &store.Job{
-					ID: id, Post: args[0], Dest: to, At: when.UTC(),
-					Status: store.JobPending, CreatedAt: now, UpdatedAt: now,
+				for _, d := range dests {
+					id, err := newJobID()
+					if err != nil {
+						return err
+					}
+					s.Jobs[id] = &store.Job{
+						ID: id, Post: args[0], Dest: d.Name, At: when.UTC(),
+						Status: store.JobPending, CreatedAt: now, UpdatedAt: now,
+					}
+					rows = append(rows, map[string]any{
+						"id": id, "post": args[0], "dest": d.Name, "at": when.UTC(), "action": "scheduled",
+					})
 				}
 				return nil
 			})
@@ -360,14 +435,18 @@ func postScheduleCmd() *cobra.Command {
 				return err
 			}
 			st, _ := store.Load()
-			audit(st, "post schedule", true, map[string]any{"id": jobID, "post": args[0], "dest": to, "at": when.UTC()})
-			out.P.Print("post schedule", map[string]any{
-				"id": jobID, "post": args[0], "dest": to, "at": when.UTC(), "action": "scheduled",
-			}, nil)
+			for _, r := range rows {
+				audit(st, "post schedule", true, map[string]any{"id": r["id"], "post": r["post"], "dest": r["dest"], "at": r["at"]})
+			}
+			if len(rows) == 1 {
+				out.P.Print("post schedule", rows[0], nil)
+			} else {
+				out.P.Print("post schedule", map[string]any{"jobs": rows}, nil)
+			}
 			return nil
 		},
 	}
-	c.Flags().StringVar(&to, "to", "", "destination name")
+	c.Flags().StringVar(&to, "to", "", "destination name, or several separated by commas")
 	c.Flags().StringVar(&at, "at", "", "when to publish (RFC3339 or 2006-01-02 15:04)")
 	return c
 }
@@ -407,11 +486,26 @@ func (r statusResult) Text() string {
 
 func postStatusCmd() *cobra.Command {
 	var run bool
+	var every time.Duration
 	c := &cobra.Command{
 		Use:   "status",
 		Short: "Show scheduled publish jobs (optionally run due ones)",
 		Args:  cobra.NoArgs,
-		RunE: func(_ *cobra.Command, _ []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			if every != 0 {
+				if !run {
+					return out.Usage("--every needs --run")
+				}
+				if every < minEvery {
+					return out.Usage("--every must be at least %s", minEvery)
+				}
+				if g.dryRun {
+					return out.Usage("--every does not combine with --dry-run")
+				}
+				ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
+				defer stop()
+				return watchJobs(ctx, every)
+			}
 			var ran []jobRow
 			if run && !g.dryRun {
 				var err error
@@ -445,7 +539,33 @@ func postStatusCmd() *cobra.Command {
 		},
 	}
 	c.Flags().BoolVar(&run, "run", false, "publish jobs whose --at time has passed")
+	c.Flags().DurationVar(&every, "every", 0, "with --run: keep running, checking this often (like 1m); stop with Ctrl-C")
 	return c
+}
+
+// minEvery keeps a watch loop from hammering the store; tests lower it.
+var minEvery = 10 * time.Second
+
+// watchJobs runs due jobs now and then every interval until ctx ends. It
+// prints one envelope per round in which a job ran; a failed job does not
+// stop the loop, a broken store does.
+func watchJobs(ctx context.Context, every time.Duration) error {
+	t := time.NewTicker(every)
+	defer t.Stop()
+	for {
+		ran, err := runDueJobs()
+		if err != nil {
+			return err
+		}
+		if len(ran) > 0 {
+			out.P.Print("post status", statusResult{Jobs: []jobRow{}, Ran: ran}, nil)
+		}
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-t.C:
+		}
+	}
 }
 
 func runDueJobs() ([]jobRow, error) {
@@ -610,4 +730,14 @@ func staleJobs(st *store.State) []string {
 		}
 	}
 	return ids
+}
+
+// checkLength refuses a post that is too long for d's network, before
+// anything is sent or scheduled.
+func checkLength(d *store.Dest, c dest.Content) error {
+	if err := dest.CheckLength(d, c); err != nil {
+		return out.Errf(out.ExitUsage, "POST_TOO_LONG",
+			"shorten the post with `kongkow post edit NAME`", "%v", err)
+	}
+	return nil
 }

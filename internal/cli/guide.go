@@ -23,10 +23,11 @@ Posts
   kongkow post draft NAME --title T --body '...' [--media a,b] [--collection C]
   kongkow post compose NAME    same as draft
   kongkow post list | show NAME | edit NAME | rm NAME
-  kongkow post publish NAME --to DEST
-  kongkow post schedule NAME --to DEST --at '2006-01-02 15:04'
+  kongkow post publish NAME --to DEST[,DEST...]   all are checked before any is sent
+  kongkow post schedule NAME --to DEST[,DEST...] --at '2006-01-02 15:04'
   kongkow post cancel JOB
   kongkow post status [--run]  list jobs; --run publishes due ones
+  kongkow post status --run --every 1m   keep running as a scheduler (docs/self-host.md)
 
 Collections and bookmarks
   kongkow collection add NAME [--title T]
@@ -37,6 +38,9 @@ Collections and bookmarks
 Destinations
   kongkow dest add NAME --kind file --target DIR
   kongkow dest add NAME --kind telegram --target CHAT_ID --secret-ref secret:TOKEN
+  kongkow dest add NAME --kind mastodon --target https://INSTANCE --secret-ref secret:TOKEN
+  kongkow dest add NAME --kind bluesky --target HANDLE --secret-ref secret:APP_PASSWORD
+  Text limits: Mastodon 500, Bluesky 300 characters; checked before sending.
   kongkow dest list | show NAME | edit NAME | rm NAME | test NAME
   Never put bot tokens on the command line: store them with secret set first.
   A --protected destination needs --yes to edit, remove or publish.

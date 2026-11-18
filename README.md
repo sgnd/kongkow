@@ -7,7 +7,7 @@
 
 kongkow is a **local-first open-source CLI** for social posts: write on this computer, keep tokens in a sealed E2EE vault (`~/.kongkow`), and ship to the destinations you connect. It is not a thin client of [kongkow.xyz](https://kongkow.xyz) or any cloud content API.
 
-Today the OSS binary publishes to **Telegram** and a **file** sink, with local schedule and audit. More networks belong on the product roadmap; this repo stays honest about what the binary can do right now.
+Today the OSS binary publishes to **Telegram**, **Mastodon**, **Bluesky** and a **file** sink, with local schedule and audit. More networks belong on the product roadmap; this repo stays honest about what the binary can do right now.
 
 - **One place** for drafts, destinations, collections and bookmarks.
 - **Write once, publish to the destinations you add** — dry-run first, then send.
@@ -54,6 +54,26 @@ kongkow dest add tg --kind telegram --target CHAT_ID --secret-ref secret:tg_bot
 kongkow dest test tg
 kongkow post publish hello --to tg
 ```
+
+Mastodon (an access token with `write:statuses`) and Bluesky (an app password):
+
+```bash
+kongkow secret set masto
+kongkow dest add masto --kind mastodon --target https://mastodon.social --secret-ref secret:masto
+kongkow secret set bsky
+kongkow dest add bsky --kind bluesky --target you.bsky.social --secret-ref secret:bsky
+kongkow post publish hello --to masto,bsky --dry-run
+```
+
+## Run the scheduler
+
+`kongkow post status --run --every 1m` sends scheduled posts on time.
+Run it under launchd or systemd on your own machine:
+[docs/self-host.md](docs/self-host.md).
+
+## Privacy
+
+No telemetry. kongkow sends nothing except the publishes you ask for.
 
 ## Agents
 

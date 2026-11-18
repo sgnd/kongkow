@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -153,4 +154,71 @@ func TestStuckJobInDoctorAndCancel(t *testing.T) {
 	if j := onlyJob(t); j.Status != store.JobCancelled {
 		t.Fatalf("status %q", j.Status)
 	}
+}
+
+func TestTooLongForBluesky(t *testing.T) {
+	setupJobs(t)
+	run(t, 0, "post", "draft", "long", "--body", strings.Repeat("a", 301))
+	run(t, 0, "dest", "add", "bs", "--kind", "bluesky", "--target", "me.bsky.social", "--secret-ref", "secret:bs")
+	run(t, out.ExitUsage, "post", "publish", "long", "--to", "bs", "--dry-run")
+	run(t, out.ExitUsage, "post", "schedule", "long", "--to", "bs", "--at", "2030-01-01 10:00")
+	run(t, out.ExitUsage, "dest", "add", "m", "--kind", "mastodon", "--target", "http://mastodon.social", "--secret-ref", "secret:m")
+}
+
+func TestPublishAndScheduleToMany(t *testing.T) {
+	outDir := setupJobs(t)
+	other := filepath.Join(t.TempDir(), "other")
+	run(t, 0, "dest", "add", "f2", "--kind", "file", "--target", other)
+
+	// An unknown name stops everything before anything is sent.
+	run(t, out.ExitNotFound, "post", "publish", "n1", "--to", "f1,nope")
+	if ents, _ := os.ReadDir(outDir); len(ents) != 0 {
+		t.Fatalf("sent before checking all destinations: %d files", len(ents))
+	}
+
+	env := runJSON(t, 0, "post", "publish", "n1", "--to", "f1, f2,f1")
+	rows, _ := env["data"].(map[string]any)["results"].([]any)
+	if len(rows) != 2 {
+		t.Fatalf("want 2 results, got %v", env["data"])
+	}
+	for _, dir := range []string{outDir, other} {
+		if ents, _ := os.ReadDir(dir); len(ents) != 1 {
+			t.Fatalf("%s: want 1 file, got %d", dir, len(ents))
+		}
+	}
+
+	past := time.Now().Add(-time.Hour).Format(time.RFC3339)
+	run(t, 0, "post", "schedule", "n1", "--to", "f1,f2", "--at", past)
+	st, err := store.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(st.Jobs) != 2 {
+		t.Fatalf("want 2 jobs, got %d", len(st.Jobs))
+	}
+	run(t, out.ExitUsage, "post", "publish", "n1", "--to", " , ")
+}
+
+func TestWatchRunsDueJobs(t *testing.T) {
+	outDir := setupJobs(t)
+	soon := time.Now().Add(300 * time.Millisecond).Format(time.RFC3339Nano)
+	run(t, 0, "post", "schedule", "n1", "--to", "f1", "--at", soon)
+	ctx, cancel := context.WithTimeout(t.Context(), 2*time.Second)
+	defer cancel()
+	if err := watchJobs(ctx, 100*time.Millisecond); err != nil {
+		t.Fatal(err)
+	}
+	if j := onlyJob(t); j.Status != store.JobDone {
+		t.Fatalf("status %q", j.Status)
+	}
+	if ents, _ := os.ReadDir(outDir); len(ents) != 1 {
+		t.Fatalf("want 1 file, got %d", len(ents))
+	}
+}
+
+func TestWatchFlagRules(t *testing.T) {
+	setupJobs(t)
+	run(t, out.ExitUsage, "post", "status", "--every", "1m")
+	run(t, out.ExitUsage, "post", "status", "--run", "--every", "1s")
+	run(t, out.ExitUsage, "post", "status", "--run", "--every", "1m", "--dry-run")
 }

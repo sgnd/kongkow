@@ -1,12 +1,12 @@
 ---
 name: kongkow
-description: Manage local posts, collections, bookmarks, publish destinations (Telegram, file) and vault secrets through the kongkow CLI. Use when the user mentions kongkow, drafts, publishing to Telegram, or local content destinations — not for SSH/servers (that is komando).
+description: Manage local posts, collections, bookmarks, publish destinations (Telegram, Mastodon, Bluesky, file) and vault secrets through the kongkow CLI. Use when the user mentions kongkow, drafts, publishing to Telegram, Mastodon or Bluesky, or local content destinations — not for SSH/servers (that is komando).
 ---
 
 # kongkow
 
 kongkow is a local-first CLI for posts and publish destinations. Do all
-content and destination work through it. Do not call Telegram APIs or write
+content and destination work through it. Do not call Telegram, Mastodon or Bluesky APIs or write
 bot tokens yourself when kongkow has a command. Do not use it for SSH or
 servers — that is komando.
 
@@ -43,6 +43,8 @@ kongkow post draft hello --title Hi --body 'Hello'
 kongkow dest add local --kind file --target /tmp/kongkow-out
 kongkow post publish hello --to local
 kongkow dest add tg --kind telegram --target CHAT_ID --secret-ref secret:tg_bot
+kongkow dest add masto --kind mastodon --target https://mastodon.social --secret-ref secret:masto
+kongkow dest add bsky --kind bluesky --target you.bsky.social --secret-ref secret:bsky
 kongkow post schedule hello --to local --at '2030-01-01 09:00'
 kongkow post status --run
 kongkow post cancel JOB      # only a pending job

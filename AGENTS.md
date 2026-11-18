@@ -10,7 +10,7 @@ flag on the command line.
 ## Rules
 
 1. Use `kongkow` for local posts, destinations and vault secrets. Do not
-   call Telegram APIs or write destination tokens yourself when kongkow
+   call Telegram, Mastodon or Bluesky APIs or write destination tokens yourself when kongkow
    has a command for it. Do not use kongkow for SSH or servers (komando).
 2. At the start of a session, run `kongkow guide` and follow it. Run
    `kongkow list` and `kongkow doctor` when unsure about state.

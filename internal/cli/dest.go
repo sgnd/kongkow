@@ -55,9 +55,9 @@ func destAddCmd() *cobra.Command {
 			return nil
 		},
 	}
-	c.Flags().StringVar(&kind, "kind", "", "telegram|file")
-	c.Flags().StringVar(&target, "target", "", "chat id (telegram) or directory (file)")
-	c.Flags().StringVar(&secretRef, "secret-ref", "", "secret:NAME for the bot token (telegram)")
+	c.Flags().StringVar(&kind, "kind", "", strings.Join(store.DestKinds, "|"))
+	c.Flags().StringVar(&target, "target", "", "chat id (telegram), instance URL (mastodon), handle (bluesky) or directory (file)")
+	c.Flags().StringVar(&secretRef, "secret-ref", "", "secret:NAME for the token: bot token (telegram), access token (mastodon), app password (bluesky)")
 	c.Flags().StringVar(&notes, "notes", "", "notes")
 	c.Flags().BoolVar(&protected, "protected", false, "changes and publishes need --yes")
 	return c
@@ -260,20 +260,31 @@ func validateDestKind(kind, target, secretRef string) error {
 		if strings.TrimSpace(target) == "" {
 			return out.Usage("file destinations need --target DIR")
 		}
-	case store.DestTelegram:
+	case store.DestTelegram, store.DestMastodon, store.DestBluesky:
 		if strings.TrimSpace(target) == "" {
-			return out.Usage("telegram destinations need --target CHAT_ID")
+			return out.Usage("%s destinations need --target %s", kind, destTargetHelp[kind])
+		}
+		if kind == store.DestMastodon {
+			if _, err := dest.MastodonBase(target); err != nil {
+				return out.Usage("%v", err)
+			}
 		}
 		if secretRef == "" {
-			return out.Usage("telegram destinations need --secret-ref secret:NAME")
+			return out.Usage("%s destinations need --secret-ref secret:NAME", kind)
 		}
 		if !vault.ValidRef(secretRef) || !strings.HasPrefix(secretRef, "secret:") {
 			return out.Usage("--secret-ref must be secret:NAME (never put the token on the command line)")
 		}
 	case "":
-		return out.Usage("--kind is telegram or file")
+		return out.Usage("--kind is one of %s", strings.Join(store.DestKinds, ", "))
 	default:
-		return out.Usage("kind %q is not supported; use %s", kind, strings.Join(store.DestKinds, " or "))
+		return out.Usage("kind %q is not supported; use one of %s", kind, strings.Join(store.DestKinds, ", "))
 	}
 	return nil
+}
+
+var destTargetHelp = map[string]string{
+	store.DestTelegram: "CHAT_ID",
+	store.DestMastodon: "https://INSTANCE",
+	store.DestBluesky:  "HANDLE",
 }
