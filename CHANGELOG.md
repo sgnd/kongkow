@@ -5,6 +5,8 @@ the release workflow takes its notes from that section.
 
 ## [Unreleased]
 
+- Links and @mentions in Bluesky posts are clickable. A mention whose
+  handle cannot be found stays plain text.
 - Queue slots: `dest edit NAME --slots 09:00,18:00` sets daily times, and
   `post queue NAME --to DEST` takes the next free one.
 - An AI agent's kongkow stops when `KONGKOW_HOME` names another folder

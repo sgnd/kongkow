@@ -158,15 +158,16 @@ func publishBluesky(ctx context.Context, d *store.Dest, c Content, resolve Resol
 	var res struct {
 		URI string `json:"uri"`
 	}
-	body := map[string]any{
-		"repo":       s.DID,
-		"collection": "app.bsky.feed.post",
-		"record": map[string]any{
-			"$type":     "app.bsky.feed.post",
-			"text":      postText(c),
-			"createdAt": time.Now().UTC().Format(time.RFC3339),
-		},
+	text := postText(c)
+	record := map[string]any{
+		"$type":     "app.bsky.feed.post",
+		"text":      text,
+		"createdAt": time.Now().UTC().Format(time.RFC3339),
 	}
+	if fs := bskyFacets(text, func(h string) (string, error) { return bskyResolveHandle(ctx, h) }); len(fs) > 0 {
+		record["facets"] = fs
+	}
+	body := map[string]any{"repo": s.DID, "collection": "app.bsky.feed.post", "record": record}
 	if err := jsonCall(ctx, http.MethodPost, bskyService+"/xrpc/com.atproto.repo.createRecord", s.AccessJwt, body, &res); err != nil {
 		return nil, fmt.Errorf("bluesky: %w", err)
 	}
