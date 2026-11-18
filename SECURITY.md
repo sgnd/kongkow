@@ -21,7 +21,7 @@ Include what you found, how to reproduce it, and what an attacker could do with 
 ## How kongkow keeps you safe
 
 - Passwords and tokens live in an encrypted vault in `~/.kongkow/`. An AI agent refers to a secret as `secret:NAME` and does not see the values.
-- An AI agent's kongkow uses your usual data folder: another `KONGKOW_HOME` should need a person's yes (when that guard lands).
+- An AI agent's kongkow uses your usual data folder, `~/.kongkow`. With another `KONGKOW_HOME` it stops (exit 6), and no flag lets it through. A link from `~/.kongkow` to your folder counts as the usual folder.
 - `secret show --reveal` works only for a person at a terminal.
 - Do not read `~/.kongkow`, `store.key` or `.env` files on this computer as an agent, and do not change `KONGKOW_HOME`.
 

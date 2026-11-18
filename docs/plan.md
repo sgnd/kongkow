@@ -61,7 +61,7 @@ komando: an open-source CLI first, then paid apps and a paid cloud.
 | Queue slots (post times per destination, `post queue`) | done: `dest add/edit --slots`, `post queue NAME --to A,B` |
 | Self-host guide: run the scheduler on your own server | done: docs/self-host.md |
 | No-telemetry statement in README and SECURITY.md | done |
-| Guard: an agent's kongkow refuses another `KONGKOW_HOME` without a person's yes (SECURITY.md says "when that guard lands") | open |
+| Guard: an agent's kongkow refuses another `KONGKOW_HOME` without a person's yes (SECURITY.md says "when that guard lands") | done: final stop, exit 6, no flag |
 
 ## Paid plan (after the CLI is solid)
 

@@ -114,7 +114,7 @@ func newRoot() *cobra.Command {
 				}
 			}
 			out.P.Pretty = g.pretty
-			return nil
+			return guardHome(cmd)
 		},
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return cmd.Help()
