@@ -20,7 +20,7 @@ Start
   kongkow guide                this playbook
 
 Posts
-  kongkow post draft NAME --title T --body '...' [--media a,b] [--collection C]
+  kongkow post draft NAME --title T --body '...' [--media a,b [--alt TEXT]...] [--collection C]
   kongkow post compose NAME    same as draft
   kongkow post list | show NAME | edit NAME | rm NAME
   kongkow post publish NAME --to DEST[,DEST...]   all are checked before any is sent
@@ -44,6 +44,7 @@ Destinations
   Text limits: Mastodon 500, Bluesky 300 characters; checked before sending.
   Images (--media): up to 4 JPEG, PNG, GIF or WebP files are uploaded to
   Mastodon and Bluesky (Bluesky: 1 MB each); other destinations list the paths.
+  --alt describes each image for screen readers, once per image, in order.
   kongkow dest list | show NAME | edit NAME | rm NAME | test NAME
   kongkow dest edit NAME --slots 09:00,13:00,18:00   daily times for post queue
   Never put bot tokens on the command line: store them with secret set first.

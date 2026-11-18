@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"unicode/utf8"
 
 	"github.com/sgnd/kongkow/internal/store"
 )
@@ -16,6 +17,7 @@ import (
 // Image limits per network: count per post and bytes per file.
 const (
 	maxImages         = 4
+	maxAlt            = 1500 // Mastodon's limit; Bluesky allows more
 	mastodonImageSize = 16 << 20
 	blueskyImageSize  = 1_000_000
 )
@@ -24,6 +26,7 @@ var imageTypes = map[string]bool{"image/jpeg": true, "image/png": true, "image/g
 
 type image struct {
 	Path string
+	Alt  string
 	Type string
 	Data []byte
 }
@@ -53,7 +56,14 @@ func loadImages(d *store.Dest, c Content) ([]image, error) {
 		limit = blueskyImageSize
 	}
 	var imgs []image
-	for _, p := range c.Media {
+	for i, p := range c.Media {
+		alt := ""
+		if i < len(c.Alt) {
+			alt = c.Alt[i]
+		}
+		if n := utf8.RuneCountInString(alt); n > maxAlt {
+			return nil, fmt.Errorf("alt text for %s has %d characters; at most %d", p, n, maxAlt)
+		}
 		fi, err := os.Stat(p)
 		if err != nil {
 			return nil, fmt.Errorf("media %s: %w", p, err)
@@ -69,7 +79,7 @@ func loadImages(d *store.Dest, c Content) ([]image, error) {
 		if !imageTypes[typ] {
 			return nil, fmt.Errorf("media %s is %s; only JPEG, PNG, GIF and WebP images can be uploaded", p, typ)
 		}
-		imgs = append(imgs, image{Path: p, Type: typ, Data: data})
+		imgs = append(imgs, image{Path: p, Alt: alt, Type: typ, Data: data})
 	}
 	return imgs, nil
 }
@@ -84,6 +94,11 @@ func mastodonUpload(ctx context.Context, base, tok string, img image) (string, e
 	}
 	if _, err := part.Write(img.Data); err != nil {
 		return "", err
+	}
+	if img.Alt != "" {
+		if err := w.WriteField("description", img.Alt); err != nil {
+			return "", err
+		}
 	}
 	if err := w.Close(); err != nil {
 		return "", err

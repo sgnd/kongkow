@@ -8,6 +8,8 @@ the release workflow takes its notes from that section.
 - Images in `--media` are uploaded to Mastodon and Bluesky (up to 4 JPEG,
   PNG, GIF or WebP files; 1 MB each on Bluesky). Every file is checked
   before anything is sent.
+- `--alt` gives each image a description for screen readers, on Mastodon
+  and Bluesky.
 - Links and @mentions in Bluesky posts are clickable. A mention whose
   handle cannot be found stays plain text.
 - Queue slots: `dest edit NAME --slots 09:00,18:00` sets daily times, and

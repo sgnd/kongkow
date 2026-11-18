@@ -55,7 +55,7 @@ func TestBlueskyEmbedsImages(t *testing.T) {
 
 	img := writeFile(t, "a.png", pngHeader)
 	d := &store.Dest{Name: "b", Kind: store.DestBluesky, Target: "me", SecretRef: "secret:b"}
-	if _, err := Publish(t.Context(), d, Content{Body: "pic", Media: []string{img}}, secretResolver); err != nil {
+	if _, err := Publish(t.Context(), d, Content{Body: "pic", Media: []string{img}, Alt: []string{"A red logo"}}, secretResolver); err != nil {
 		t.Fatal(err)
 	}
 	record := f.got["/xrpc/com.atproto.repo.createRecord"]["record"].(map[string]any)
@@ -65,6 +65,9 @@ func TestBlueskyEmbedsImages(t *testing.T) {
 	}
 	images := embed["images"].([]any)
 	blob := images[0].(map[string]any)["image"].(map[string]any)
+	if images[0].(map[string]any)["alt"] != "A red logo" {
+		t.Fatalf("alt %v", images[0])
+	}
 	if len(images) != 1 || blob["mimeType"] != "image/png" {
 		t.Fatalf("images %v", images)
 	}
@@ -93,6 +96,10 @@ func TestCheckMedia(t *testing.T) {
 		if err == nil || !strings.Contains(err.Error(), c.want) {
 			t.Errorf("%s %v: want %q, got %v", c.d.Kind, c.media, c.want, err)
 		}
+	}
+	long := strings.Repeat("a", maxAlt+1)
+	if err := CheckMedia(m, Content{Media: []string{img}, Alt: []string{long}}); err == nil {
+		t.Fatal("alt text over the limit should be refused")
 	}
 	gone := filepath.Join(t.TempDir(), "gone.png")
 	if err := CheckMedia(m, Content{Media: []string{gone}}); !errors.Is(err, os.ErrNotExist) {

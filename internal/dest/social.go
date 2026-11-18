@@ -194,7 +194,7 @@ func publishBluesky(ctx context.Context, d *store.Dest, c Content, resolve Resol
 			if err != nil {
 				return nil, fmt.Errorf("bluesky: %w", err)
 			}
-			embeds = append(embeds, map[string]any{"alt": "", "image": blob})
+			embeds = append(embeds, map[string]any{"alt": img.Alt, "image": blob})
 		}
 		record["embed"] = map[string]any{"$type": "app.bsky.embed.images", "images": embeds}
 	}
