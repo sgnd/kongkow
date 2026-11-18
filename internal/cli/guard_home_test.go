@@ -31,6 +31,16 @@ func TestAgentStoppedInOtherHome(t *testing.T) {
 	run(t, 0, "guide")
 }
 
+func TestAgentStoppedWhenHomeMoves(t *testing.T) {
+	usual := filepath.Join(t.TempDir(), ".kongkow")
+	asAgent(t, usual)
+	t.Setenv("KONGKOW_HOME", "")
+	t.Setenv("HOME", t.TempDir())
+	store.Close()
+	t.Cleanup(store.Close)
+	run(t, out.ExitPolicy, "list")
+}
+
 func TestAgentAllowedInUsualHome(t *testing.T) {
 	usual := filepath.Join(t.TempDir(), ".kongkow")
 	asAgent(t, usual)

@@ -45,7 +45,9 @@ komando: an open-source CLI first, then paid apps and a paid cloud.
 | `post status --run` exit code when a job fails | done: exit 1 |
 | Release workflow (tagged binaries for `install.sh`) | done: `release.yml`, `make dist`, CHANGELOG.md |
 | First release tag `v0.0.1` (semver from 0.0.1; tags group changes) | done: released |
-| Release `v0.1.0` (queue slots, KONGKOW_HOME guard, Bluesky facets, images and alt text) | open, needs owner yes to tag |
+| Release `v0.1.0` (queue slots, KONGKOW_HOME guard, Bluesky facets, images and alt text) | done: released |
+| Release gate on v0.1.0 (tests, binary run, antislop, security audit) | done: one medium fixed (HOME moved the store past the agent guard) |
+| Release `v0.1.1` (guard fix, regular-file media check, CI smoke run) | open, needs owner yes to tag |
 | Signed macOS binaries and signed checksums (like komando) | deferred: needs Apple Developer ID and a release signing key from the owner |
 
 ## Milestone 4: the killer feature, locally

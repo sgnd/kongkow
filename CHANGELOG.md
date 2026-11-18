@@ -3,6 +3,15 @@
 All notable changes to kongkow. Each release has a section `## [X.Y.Z]`;
 the release workflow takes its notes from that section.
 
+## [Unreleased]
+
+- An AI agent's kongkow now also stops when a changed `HOME` would move
+  its data folder away from `~/.kongkow`. Before, only `KONGKOW_HOME` was
+  checked.
+- `--media` takes regular files only, so a device or folder cannot hang a
+  publish.
+- CI runs the built binary through its main commands (`scripts/smoke.sh`).
+
 ## [0.1.0]
 
 - Images in `--media` are uploaded to Mastodon and Bluesky (up to 4 JPEG,

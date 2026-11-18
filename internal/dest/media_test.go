@@ -101,6 +101,9 @@ func TestCheckMedia(t *testing.T) {
 	if err := CheckMedia(m, Content{Media: []string{img}, Alt: []string{long}}); err == nil {
 		t.Fatal("alt text over the limit should be refused")
 	}
+	if err := CheckMedia(m, Content{Media: []string{t.TempDir()}}); err == nil || !strings.Contains(err.Error(), "not a regular file") {
+		t.Fatalf("directory as media: %v", err)
+	}
 	gone := filepath.Join(t.TempDir(), "gone.png")
 	if err := CheckMedia(m, Content{Media: []string{gone}}); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("missing file: %v", err)

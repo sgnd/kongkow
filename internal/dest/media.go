@@ -68,6 +68,9 @@ func loadImages(d *store.Dest, c Content) ([]image, error) {
 		if err != nil {
 			return nil, fmt.Errorf("media %s: %w", p, err)
 		}
+		if !fi.Mode().IsRegular() {
+			return nil, fmt.Errorf("media %s is not a regular file", p)
+		}
 		if fi.Size() > int64(limit) {
 			return nil, fmt.Errorf("media %s is %d bytes; %s takes at most %d", p, fi.Size(), d.Kind, limit)
 		}
