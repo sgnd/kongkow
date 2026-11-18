@@ -41,22 +41,27 @@ komando: an open-source CLI first, then paid apps and a paid cloud.
 
 | Item | Status |
 |---|---|
-| Stale `running` job recovery in `doctor` (job left by a crashed run) | open |
-| `post status --run` exit code when a job fails | open |
-| Release workflow (tagged binaries for `install.sh`) | open, needs owner yes to tag |
+| Stale `running` job recovery in `doctor` (job left by a crashed run) | done: doctor warns after 10 min; `post cancel` clears a stuck job |
+| `post status --run` exit code when a job fails | done: exit 1 |
+| Release workflow (tagged binaries for `install.sh`) | done: `release.yml`, `make dist`, CHANGELOG.md |
+| First release tag `v0.0.1` (semver from 0.0.1; tags group changes) | open, needs owner yes to tag |
+| Signed macOS binaries and signed checksums (like komando) | deferred: needs Apple Developer ID and a release signing key from the owner |
 
 ## Milestone 4: the killer feature, locally
 
 | Item | Status |
 |---|---|
-| Publish to Mastodon and Bluesky (open APIs first) | open |
+| Publish to Mastodon and Bluesky (open APIs first) | done (text only; media upload is a separate item) |
 | Publish to X and LinkedIn | open, needs owner's developer apps (may cost money) |
-| One post to many destinations: `post publish NAME --to A,B` | open |
-| Per-network text limits and checks before publish | open |
-| `kongkow schedule run --watch`: a local scheduler loop, plus a launchd/systemd example | open |
-| Queue slots (post times per destination, `post queue`) | open |
-| Self-host guide: run the scheduler on your own server | open |
-| No-telemetry statement in README and SECURITY.md | open |
+| One post to many destinations: `post publish NAME --to A,B` | done: also `post schedule`; all checked before any is sent |
+| Per-network text limits and checks before publish | done for Mastodon (500) and Bluesky (300) |
+| Media upload to Mastodon and Bluesky (today media paths are listed as text) | open |
+| Bluesky links and mentions as rich-text facets | done: a mention whose handle does not resolve stays plain text |
+| `kongkow schedule run --watch`: a local scheduler loop, plus a launchd/systemd example | done as `post status --run --every 1m` (one command for running jobs, not a second one) |
+| Queue slots (post times per destination, `post queue`) | done: `dest add/edit --slots`, `post queue NAME --to A,B` |
+| Self-host guide: run the scheduler on your own server | done: docs/self-host.md |
+| No-telemetry statement in README and SECURITY.md | done |
+| Guard: an agent's kongkow refuses another `KONGKOW_HOME` without a person's yes (SECURITY.md says "when that guard lands") | done: final stop, exit 6, no flag |
 
 ## Paid plan (after the CLI is solid)
 

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/sgnd/kongkow/internal/store"
@@ -45,16 +44,7 @@ func publishTelegram(ctx context.Context, d *store.Dest, c Content, resolve Reso
 	if err != nil {
 		return nil, err
 	}
-	text := c.Body
-	if c.Title != "" {
-		text = c.Title + "\n\n" + c.Body
-	}
-	if len(c.Media) > 0 {
-		text += "\n\nMedia:\n" + strings.Join(c.Media, "\n")
-	}
-	if text == "" {
-		text = c.Name
-	}
+	text := postText(c)
 	parseMode := ""
 	if d.Options != nil {
 		parseMode = d.Options["parse_mode"]

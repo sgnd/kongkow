@@ -8,10 +8,10 @@ import (
 	"github.com/sgnd/kongkow/internal/out"
 )
 
-const guideText = `kongkow — local-first posts and publish destinations
+const guideText = `kongkow: draft, schedule and publish your social media posts, locally
 
 kongkow keeps content and destination credentials on this computer
-(~/.kongkow by default). It is not a thin client of kongkow.xyz.
+(~/.kongkow by default). It is not a thin client of efolusi.com.
 Server and DevOps work belongs in komando, not here.
 
 Start
@@ -23,10 +23,12 @@ Posts
   kongkow post draft NAME --title T --body '...' [--media a,b] [--collection C]
   kongkow post compose NAME    same as draft
   kongkow post list | show NAME | edit NAME | rm NAME
-  kongkow post publish NAME --to DEST
-  kongkow post schedule NAME --to DEST --at '2006-01-02 15:04'
+  kongkow post publish NAME --to DEST[,DEST...]   all are checked before any is sent
+  kongkow post schedule NAME --to DEST[,DEST...] --at '2006-01-02 15:04'
+  kongkow post queue NAME --to DEST[,DEST...]   at the next free slot of each destination
   kongkow post cancel JOB
   kongkow post status [--run]  list jobs; --run publishes due ones
+  kongkow post status --run --every 1m   keep running as a scheduler (docs/self-host.md)
 
 Collections and bookmarks
   kongkow collection add NAME [--title T]
@@ -37,7 +39,11 @@ Collections and bookmarks
 Destinations
   kongkow dest add NAME --kind file --target DIR
   kongkow dest add NAME --kind telegram --target CHAT_ID --secret-ref secret:TOKEN
+  kongkow dest add NAME --kind mastodon --target https://INSTANCE --secret-ref secret:TOKEN
+  kongkow dest add NAME --kind bluesky --target HANDLE --secret-ref secret:APP_PASSWORD
+  Text limits: Mastodon 500, Bluesky 300 characters; checked before sending.
   kongkow dest list | show NAME | edit NAME | rm NAME | test NAME
+  kongkow dest edit NAME --slots 09:00,13:00,18:00   daily times for post queue
   Never put bot tokens on the command line: store them with secret set first.
   A --protected destination needs --yes to edit, remove or publish.
 
@@ -58,7 +64,7 @@ Agents
 
 Future (not in this open-source CLI)
   Paid sync and team features may appear later as optional extensions.
-  This binary stays local-first; there is no kongkow.xyz API client here.
+  This binary stays local-first; there is no efolusi.com API client here.
 
 License
   AGPL-3.0; a commercial license is also available (COMMERCIAL-LICENSE.md).

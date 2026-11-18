@@ -9,7 +9,7 @@ Related: [command-standard.md](command-standard.md), [message-style.md](message-
 ## 1. What kongkow is
 
 kongkow is a local-first CLI for drafts/posts, collections, bookmarks and
-publish destinations (Telegram, file sink). One sealed store under
+publish destinations (Telegram, Mastodon, Bluesky, file sink). One sealed store under
 `~/.kongkow` (`KONGKOW_HOME`), one vault for secrets, one safety layer. It
 is for two users equally:
 
@@ -19,14 +19,14 @@ is for two users equally:
 
 kongkow is **not**:
 
-- a thin client of kongkow.xyz or any cloud content API;
+- a thin client of efolusi.com or any cloud content API;
 - an SSH / DevOps tool (that is [komando](https://github.com/sgnd/komando)).
 
 ### Core model
 
 ```
 post         = local content (title, body, media paths, collection)
-destination  = where to publish (kind: telegram | file)
+destination  = where to publish (kind: telegram | mastodon | bluesky | file)
 secret       = vault value, referenced as secret:NAME
 job          = local scheduled publish
 ```

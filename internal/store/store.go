@@ -46,11 +46,12 @@ type Draft = Post
 // Dest is a publish destination (Telegram, file sink, …).
 type Dest struct {
 	Name      string            `json:"name"`
-	Kind      string            `json:"kind"` // telegram | file
+	Kind      string            `json:"kind"` // telegram | mastodon | bluesky | file
 	Target    string            `json:"target,omitempty"`
 	SecretRef string            `json:"secret_ref,omitempty"` // secret:NAME
 	Options   map[string]string `json:"options,omitempty"`
 	Protected bool              `json:"protected,omitempty"`
+	Slots     []string          `json:"slots,omitempty"` // daily post times, HH:MM local, sorted
 	Tags      []string          `json:"tags,omitempty"`
 	Labels    map[string]string `json:"labels,omitempty"`
 	Notes     string            `json:"notes,omitempty"`
@@ -62,9 +63,11 @@ type Dest struct {
 const (
 	DestTelegram = "telegram"
 	DestFile     = "file"
+	DestMastodon = "mastodon"
+	DestBluesky  = "bluesky"
 )
 
-var DestKinds = []string{DestTelegram, DestFile}
+var DestKinds = []string{DestTelegram, DestMastodon, DestBluesky, DestFile}
 
 // Collection groups posts.
 type Collection struct {

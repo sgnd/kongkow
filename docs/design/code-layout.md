@@ -9,7 +9,7 @@
 | internal/cli | commands, flags, audit, print |
 | internal/store | sealed inventory under KONGKOW_HOME |
 | internal/sealdb / sealrow | sealed SQLite rows |
-| internal/vault | E2EE secrets |
+| internal/vault | secrets, encrypted with a key on this computer |
 | internal/dest | Telegram + file publish |
 | internal/out | JSON envelope + text |
 

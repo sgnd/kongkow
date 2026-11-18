@@ -5,7 +5,7 @@
 #
 # Installs to /usr/local/bin when writable, otherwise ~/.local/bin.
 # Override with KONGKOW_INSTALL_DIR=/some/dir.
-# Install one version with KONGKOW_VERSION=v0.1.0.
+# Install one version with KONGKOW_VERSION=v0.0.1.
 set -eu
 
 REPO="sgnd/kongkow"
