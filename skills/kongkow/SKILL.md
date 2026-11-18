@@ -48,5 +48,7 @@ kongkow dest add bsky --kind bluesky --target you.bsky.social --secret-ref secre
 kongkow post schedule hello --to local --at '2030-01-01 09:00'
 kongkow post status --run
 kongkow post cancel JOB      # only a pending job
+kongkow dest edit tg --slots 09:00,18:00
+kongkow post queue hello --to tg   # next free slot
 kongkow audit --limit 20
 ```

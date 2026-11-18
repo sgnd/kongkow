@@ -12,6 +12,8 @@ the release workflow takes its notes from that section.
   is checked before anything is sent.
 - `post status --run --every 1m` keeps running as a local scheduler;
   see docs/self-host.md for launchd and systemd.
+- Queue slots: `dest edit NAME --slots 09:00,18:00` sets daily times, and
+  `post queue NAME --to DEST` takes the next free one.
 - Local posts, collections, bookmarks and destinations in a sealed store.
 - Publish to Telegram and a file sink; dry-run first.
 - Secrets in a sealed vault, referenced as `secret:NAME`.

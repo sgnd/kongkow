@@ -58,7 +58,7 @@ komando: an open-source CLI first, then paid apps and a paid cloud.
 | Media upload to Mastodon and Bluesky (today media paths are listed as text) | open |
 | Bluesky links and mentions as rich-text facets | open |
 | `kongkow schedule run --watch`: a local scheduler loop, plus a launchd/systemd example | done as `post status --run --every 1m` (one command for running jobs, not a second one) |
-| Queue slots (post times per destination, `post queue`) | open |
+| Queue slots (post times per destination, `post queue`) | done: `dest add/edit --slots`, `post queue NAME --to A,B` |
 | Self-host guide: run the scheduler on your own server | done: docs/self-host.md |
 | No-telemetry statement in README and SECURITY.md | done |
 | Guard: an agent's kongkow refuses another `KONGKOW_HOME` without a person's yes (SECURITY.md says "when that guard lands") | open |
