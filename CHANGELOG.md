@@ -3,7 +3,7 @@
 All notable changes to kongkow. Each release has a section `## [X.Y.Z]`;
 the release workflow takes its notes from that section.
 
-## [0.1.0]
+## [0.0.1]
 
 - Publish to Mastodon (instance + access token) and Bluesky (handle + app
   password). Text limits (500 and 300 characters) are checked before
