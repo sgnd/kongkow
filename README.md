@@ -3,21 +3,21 @@
 [![CI](https://github.com/sgnd/kongkow/actions/workflows/ci.yml/badge.svg)](https://github.com/sgnd/kongkow/actions/workflows/ci.yml)
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](LICENSE)
 
-**Local-first posts and publish destinations. For you and your AI agent.**
+**All-in-one social media for the command line.** Draft once, schedule, and publish — you and your AI agent, same CLI.
 
-kongkow keeps content and destination credentials on this computer
-(`~/.kongkow`). It is **not** a thin client of a cloud API. You write
-posts locally, store tokens in an encrypted vault, and publish to
-destinations you choose (Telegram and a file sink).
+kongkow is a **local-first open-source CLI** for social posts: write on this computer, keep tokens in a sealed E2EE vault (`~/.kongkow`), and ship to the destinations you connect. It is not a thin client of [kongkow.xyz](https://kongkow.xyz) or any cloud content API.
 
-- **One list** of posts, destinations, collections and bookmarks.
+Today the OSS binary publishes to **Telegram** and a **file** sink, with local schedule and audit. More networks belong on the product roadmap; this repo stays honest about what the binary can do right now.
+
+- **One place** for drafts, destinations, collections and bookmarks.
+- **Write once, publish to the destinations you add** — dry-run first, then send.
 - **Secrets stay in a sealed vault.** An AI agent never sees them.
 - **Readable text for you, JSON for an agent.**
 - **Local schedule and audit** for publishes and mutations.
 - **One static binary**, pure Go (`CGO_ENABLED=0`).
 
-> Tip (Bahasa): *Kongkow* = ngobrol santai. CLI-nya tetap lokal di mesin
-> Anda — bukan klien tipis ke API cloud.
+> Tip (Bahasa): *Kongkow* = ngobrol santai. All-in-one social media di mesin Anda —
+> draft, jadwal, publish — bukan klien tipis ke API cloud.
 
 ## Install
 
@@ -67,6 +67,8 @@ is available when the AGPL does not fit. See [CLA.md](CLA.md) for contributions.
 
 ## Related
 
-Server and DevOps work belongs in [komando](https://github.com/sgnd/komando),
-not here. Future Sync/Team ideas are sketched only in
-[docs/design/extensions.md](docs/design/extensions.md) — not implemented.
+- Product site: [kongkow.xyz](https://kongkow.xyz) (separate from this local-first OSS CLI).
+- Server and DevOps work belongs in [komando](https://github.com/sgnd/komando),
+  not here.
+- Future Sync/Team ideas are sketched only in
+  [docs/design/extensions.md](docs/design/extensions.md) — not implemented.
