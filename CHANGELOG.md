@@ -7,6 +7,8 @@ the release workflow takes its notes from that section.
 
 - Queue slots: `dest edit NAME --slots 09:00,18:00` sets daily times, and
   `post queue NAME --to DEST` takes the next free one.
+- An AI agent's kongkow stops when `KONGKOW_HOME` names another folder
+  than `~/.kongkow`. Any agent variable that is set counts, even empty.
 
 ## [0.0.1]
 

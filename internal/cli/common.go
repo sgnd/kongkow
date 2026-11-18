@@ -56,12 +56,14 @@ func actor() string {
 	return "unknown"
 }
 
+// agentVars are the variables an AI agent's shell carries. One that is
+// there counts whatever its value, so `CLAUDECODE= kongkow ...` cannot
+// turn the agent's safety stops off. Tests empty the list.
+var agentVars = []string{"KONGKOW_AGENT", "CLAUDECODE", "CODEX_THREAD_ID", "CURSOR_AGENT", "GEMINI_CLI"}
+
 func isAgent() bool {
-	if os.Getenv("KONGKOW_AGENT") == "1" {
-		return true
-	}
-	for _, k := range []string{"CLAUDECODE", "CODEX_THREAD_ID", "CURSOR_AGENT", "GEMINI_CLI"} {
-		if os.Getenv(k) != "" {
+	for _, k := range agentVars {
+		if _, ok := os.LookupEnv(k); ok {
 			return true
 		}
 	}
