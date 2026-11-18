@@ -106,6 +106,7 @@ type Job struct {
 
 const (
 	JobPending   = "pending"
+	JobRunning   = "running"
 	JobDone      = "done"
 	JobFailed    = "failed"
 	JobCancelled = "cancelled"

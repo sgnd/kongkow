@@ -9,10 +9,6 @@ import (
 	"github.com/sgnd/kongkow/internal/store"
 )
 
-func loadState() (*store.State, error) {
-	return store.Load()
-}
-
 func requireYes(code, msg, hint string) error {
 	if g.yes {
 		return nil

@@ -15,6 +15,9 @@ import (
 
 var httpClient = &http.Client{Timeout: 30 * time.Second}
 
+// telegramBase is the Bot API address; tests point it at a fake server.
+var telegramBase = "https://api.telegram.org"
+
 type tgAPI struct {
 	OK          bool            `json:"ok"`
 	Description string          `json:"description"`
@@ -70,7 +73,7 @@ func publishTelegram(ctx context.Context, d *store.Dest, c Content, resolve Reso
 }
 
 func tgCall(ctx context.Context, token, method string, payload any, out any) error {
-	url := "https://api.telegram.org/bot" + token + "/" + method
+	url := telegramBase + "/bot" + token + "/" + method
 	var body io.Reader
 	if payload != nil {
 		b, err := json.Marshal(payload)

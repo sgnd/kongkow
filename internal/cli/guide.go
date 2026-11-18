@@ -25,6 +25,7 @@ Posts
   kongkow post list | show NAME | edit NAME | rm NAME
   kongkow post publish NAME --to DEST
   kongkow post schedule NAME --to DEST --at '2006-01-02 15:04'
+  kongkow post cancel JOB
   kongkow post status [--run]  list jobs; --run publishes due ones
 
 Collections and bookmarks
