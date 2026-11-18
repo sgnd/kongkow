@@ -10,6 +10,7 @@ The one list of planned work for the kongkow CLI. Mark an item `done` or
 | Claim a due job (`running`) before publishing, so two runs never send it twice | done |
 | `kongkow post cancel JOB` for pending jobs | done |
 | CLI tests: schedule, run due jobs, cancel, failed job | done |
+| CI green: remove unused `loadState` (staticcheck), toolchain go1.27.4 (GO-2026-6859 in net/http) | done |
 
 ## Milestone 2: test coverage of the core
 
