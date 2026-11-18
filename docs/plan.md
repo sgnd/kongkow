@@ -53,7 +53,9 @@ komando: an open-source CLI first, then paid apps and a paid cloud.
 | Item | Status |
 |---|---|
 | Publish to Mastodon and Bluesky (open APIs first) | done (text only; media upload is a separate item) |
-| Publish to X and LinkedIn | open, needs owner's developer apps (may cost money) |
+| Publish to X and LinkedIn | split: see the two rows below |
+| Publish to LinkedIn | waiting: the owner creates the LinkedIn developer app (owner, 2026-11-18: "Ya, saya buat") |
+| Publish to X | deferred: the X API costs money; waits on the owner (owner, 2026-11-18: "Tidak sekarang") |
 | One post to many destinations: `post publish NAME --to A,B` | done: also `post schedule`; all checked before any is sent |
 | Per-network text limits and checks before publish | done for Mastodon (500) and Bluesky (300) |
 | Media upload to Mastodon and Bluesky (today media paths are listed as text) | done: up to 4 images, checked before anything is sent |
