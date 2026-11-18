@@ -41,9 +41,11 @@ komando: an open-source CLI first, then paid apps and a paid cloud.
 
 | Item | Status |
 |---|---|
-| Stale `running` job recovery in `doctor` (job left by a crashed run) | open |
-| `post status --run` exit code when a job fails | open |
-| Release workflow (tagged binaries for `install.sh`) | open, needs owner yes to tag |
+| Stale `running` job recovery in `doctor` (job left by a crashed run) | done: doctor warns after 10 min; `post cancel` clears a stuck job |
+| `post status --run` exit code when a job fails | done: exit 1 |
+| Release workflow (tagged binaries for `install.sh`) | done: `release.yml`, `make dist`, CHANGELOG.md |
+| First release tag `v0.1.0` | open, needs owner yes to tag |
+| Signed macOS binaries and signed checksums (like komando) | deferred: needs Apple Developer ID and a release signing key from the owner |
 
 ## Milestone 4: the killer feature, locally
 

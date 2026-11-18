@@ -436,6 +436,11 @@ func postStatusCmd() *cobra.Command {
 				return nil
 			}
 			out.P.Print("post status", r, nil)
+			for _, j := range ran {
+				if j.Status == store.JobFailed {
+					return exitCode(1) // the envelope above lists which job failed and why
+				}
+			}
 			return nil
 		},
 	}
@@ -558,7 +563,7 @@ func newJobID() (string, error) {
 func postCancelCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "cancel JOB",
-		Short: "Cancel a pending scheduled publish",
+		Short: "Cancel a pending or stuck scheduled publish",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
 			id := args[0]
@@ -569,9 +574,9 @@ func postCancelCmd() *cobra.Command {
 						"check the id; `kongkow post status` shows jobs",
 						"job %q is not in the store", id)
 				}
-				if j.Status != store.JobPending {
+				if j.Status != store.JobPending && !isStale(j) {
 					return out.Errf(out.ExitConflict, "JOB_NOT_PENDING",
-						"only a pending job can be cancelled",
+						"only a pending job, or one stuck running (see `kongkow doctor`), can be cancelled",
 						"job %q is %s", id, j.Status)
 				}
 				j.Status = store.JobCancelled
@@ -587,4 +592,22 @@ func postCancelCmd() *cobra.Command {
 			return nil
 		},
 	}
+}
+
+// staleAfter is how long a job may stay running before doctor calls it
+// stuck. A publish takes seconds; this leaves room for a slow network.
+const staleAfter = 10 * time.Minute
+
+func isStale(j *store.Job) bool {
+	return j.Status == store.JobRunning && time.Since(j.UpdatedAt) > staleAfter
+}
+
+func staleJobs(st *store.State) []string {
+	var ids []string
+	for _, j := range st.SortedJobs() {
+		if isStale(j) {
+			ids = append(ids, j.ID)
+		}
+	}
+	return ids
 }
