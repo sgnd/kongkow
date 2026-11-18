@@ -3,7 +3,10 @@
 All notable changes to kongkow. Each release has a section `## [X.Y.Z]`;
 the release workflow takes its notes from that section.
 
-## [Unreleased]
+## [0.1.1] - 2026-11-18
+
+Please update. In v0.1.0, setting `HOME` could move an AI agent's store
+past the `KONGKOW_HOME` guard. v0.1.1 fixes it.
 
 - An AI agent's kongkow now also stops when a changed `HOME` would move
   its data folder away from `~/.kongkow`. Before, only `KONGKOW_HOME` was
