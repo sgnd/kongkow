@@ -68,6 +68,8 @@ komando: an open-source CLI first, then paid apps and a paid cloud.
 | Item | Status |
 |---|---|
 | `efolusi/kongkow-apps`: Mac, iPhone, iPad app, built like komando-apps | deferred: waits on milestones 1-3 |
-| `efolusi/kongkow-cloud`: API, account, sync, billing, website, built like komando-cloud | deferred: waits on milestones 1-3 |
+| `efolusi/kongkow-cloud`: API, sync, hosted scheduler, website, built like komando-cloud | deferred: waits on milestones 1-3 |
+| Login and accounts | via sso: comes from `efolusi/sso`, never built in kongkow |
+| Plans, billing and checkout | via pay: comes from `efolusi/pay`, never built in kongkow |
 | Cloud sync end-to-end encrypted, hosted scheduler, team approval | deferred: part of kongkow-cloud |
 | More networks (X, Mastodon, Bluesky, LinkedIn) | moved up: see milestone 4 (the killer feature needs them) |
