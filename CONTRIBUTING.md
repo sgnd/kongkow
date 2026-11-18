@@ -25,7 +25,7 @@ A change fits when all of these are true:
 - It works as a command, for a person and for an AI agent.
 - It is safe by default: it only reads unless the user says otherwise.
 - It needs no new dependency, or the dependency is small and well kept.
-- It does not talk to kongkow.xyz unless the feature is an explicit, optional
+- It does not talk to efolusi.com unless the feature is an explicit, optional
   extension point documented in [docs/design](docs/design).
 
 For a bigger feature, open an issue first. Every feature follows

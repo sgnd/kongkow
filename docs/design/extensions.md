@@ -25,7 +25,7 @@ in without turning kongkow into a required online client.
 
 ## Rules for contributors
 
-- Do not add HTTP clients to kongkow.xyz, sync protocols or SSO flows in
+- Do not add HTTP clients to efolusi.com, sync protocols or SSO flows in
   this repository unless a design issue explicitly opens that phase.
 - Comments and empty interfaces that name Sync/Team are fine; working
   cloud code is not.

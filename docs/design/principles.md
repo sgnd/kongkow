@@ -19,7 +19,7 @@ is for two users equally:
 
 kongkow is **not**:
 
-- a thin client of kongkow.xyz or any cloud content API;
+- a thin client of efolusi.com or any cloud content API;
 - an SSH / DevOps tool (that is [komando](https://github.com/sgnd/komando)).
 
 ### Core model

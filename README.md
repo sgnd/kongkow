@@ -5,7 +5,7 @@
 
 **All-in-one social media for the command line.** Draft once, schedule, and publish — you and your AI agent, same CLI.
 
-kongkow is a **local-first open-source CLI** for social posts: write on this computer, keep tokens in a sealed E2EE vault (`~/.kongkow`), and ship to the destinations you connect. It is not a thin client of [kongkow.xyz](https://kongkow.xyz) or any cloud content API.
+kongkow is a **local-first open-source CLI** for social posts: write on this computer, keep tokens in a sealed E2EE vault (`~/.kongkow`), and ship to the destinations you connect. It is not a thin client of [efolusi.com](https://efolusi.com) or any cloud content API.
 
 Today the OSS binary publishes to **Telegram**, **Mastodon**, **Bluesky** and a **file** sink, with local schedule and audit. More networks belong on the product roadmap; this repo stays honest about what the binary can do right now.
 
@@ -87,7 +87,7 @@ is available when the AGPL does not fit. See [CLA.md](CLA.md) for contributions.
 
 ## Related
 
-- Product site: [kongkow.xyz](https://kongkow.xyz) (separate from this local-first OSS CLI).
+- Product site: [efolusi.com](https://efolusi.com) (separate from this local-first OSS CLI).
 - Server and DevOps work belongs in [komando](https://github.com/sgnd/komando),
   not here.
 - Future Sync/Team ideas are sketched only in

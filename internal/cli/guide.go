@@ -11,7 +11,7 @@ import (
 const guideText = `kongkow — local-first posts and publish destinations
 
 kongkow keeps content and destination credentials on this computer
-(~/.kongkow by default). It is not a thin client of kongkow.xyz.
+(~/.kongkow by default). It is not a thin client of efolusi.com.
 Server and DevOps work belongs in komando, not here.
 
 Start
@@ -64,7 +64,7 @@ Agents
 
 Future (not in this open-source CLI)
   Paid sync and team features may appear later as optional extensions.
-  This binary stays local-first; there is no kongkow.xyz API client here.
+  This binary stays local-first; there is no efolusi.com API client here.
 
 License
   AGPL-3.0; a commercial license is also available (COMMERCIAL-LICENSE.md).
