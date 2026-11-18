@@ -1,8 +1,10 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -118,8 +120,37 @@ func TestJobFailsWhenDestRemoved(t *testing.T) {
 	past := time.Now().Add(-time.Hour).Format(time.RFC3339)
 	run(t, 0, "post", "schedule", "n1", "--to", "f1", "--at", past)
 	run(t, 0, "dest", "rm", "f1")
-	run(t, 0, "post", "status", "--run")
+	run(t, 1, "post", "status", "--run")
 	if j := onlyJob(t); j.Status != store.JobFailed {
+		t.Fatalf("status %q", j.Status)
+	}
+}
+
+func TestStuckJobInDoctorAndCancel(t *testing.T) {
+	setupJobs(t)
+	past := time.Now().Add(-time.Hour).Format(time.RFC3339)
+	run(t, 0, "post", "schedule", "n1", "--to", "f1", "--at", past)
+	id := onlyJob(t).ID
+	setJob := func(status string, age time.Duration) {
+		if err := store.Update(func(s *store.State) error {
+			s.Jobs[id].Status = status
+			s.Jobs[id].UpdatedAt = time.Now().Add(-age).UTC()
+			return nil
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// A job that just started running is not stuck and cannot be cancelled.
+	setJob(store.JobRunning, time.Minute)
+	run(t, out.ExitConflict, "post", "cancel", id)
+	// Doctor warns about a stuck job but still exits 0.
+	setJob(store.JobRunning, time.Hour)
+	env := runJSON(t, 0, "doctor")
+	if !strings.Contains(fmt.Sprint(env["data"]), id) {
+		t.Fatalf("doctor misses stuck job: %v", env["data"])
+	}
+	run(t, 0, "post", "cancel", id)
+	if j := onlyJob(t); j.Status != store.JobCancelled {
 		t.Fatalf("status %q", j.Status)
 	}
 }

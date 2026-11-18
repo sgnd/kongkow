@@ -59,7 +59,7 @@ func doctorCmd() *cobra.Command {
 		Args:  cobra.NoArgs,
 		RunE: func(_ *cobra.Command, _ []string) error {
 			r := doctorReport{optional: map[string]bool{
-				"posts": true, "dests": true, "collections": true, "bookmarks": true,
+				"posts": true, "dests": true, "collections": true, "bookmarks": true, "jobs": true,
 			}}
 			add := func(name string, ok bool, detail string) {
 				r.Checks = append(r.Checks, doctorCheck{name, ok, detail})
@@ -96,6 +96,13 @@ func doctorCmd() *cobra.Command {
 			add("dests", true, emptyOrCount(len(st.Dests), "destination"))
 			add("collections", true, emptyOrCount(len(st.Collections), "collection"))
 			add("bookmarks", true, emptyOrCount(len(st.Bookmarks), "bookmark"))
+			if stale := staleJobs(st); len(stale) > 0 {
+				add("jobs", false, fmt.Sprintf("%s stuck running (%s): a run stopped mid-publish; "+
+					"check the destination, then `kongkow post cancel JOB` and schedule again if it was not sent",
+					countOf(len(stale), "job"), strings.Join(stale, ", ")))
+			} else {
+				add("jobs", true, "none stuck")
+			}
 			add("platform", true, runtime.GOOS+"/"+runtime.GOARCH)
 			fails := 0
 			for _, c := range r.Checks {

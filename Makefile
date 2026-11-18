@@ -9,7 +9,7 @@ GOVULNCHECK := v1.9.0
 PLATFORMS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64
 export PLATFORMS
 
-.PHONY: help build install test lint security bins clean
+.PHONY: help build install test lint security bins dist clean
 
 help: ## Show this help
 	@grep -E '^[a-z0-9-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-15s %s\n", $$1, $$2}'
@@ -41,6 +41,18 @@ bins: ## Build release binaries into OUT/kongkow_OS_ARCH/
 	  echo "  $$name"; mkdir -p $(OUT)/$$name && \
 	  GOOS=$$os GOARCH=$$arch $(GOBUILD) -o $(OUT)/$$name/$$exe ./cmd/kongkow || exit 1; \
 	done
+
+dist: bins ## Release archives and checksums.txt into dist/
+	@mkdir -p dist
+	@for d in $(OUT)/kongkow_*; do \
+	  name=$$(basename $$d); \
+	  case $$name in \
+	    *windows*) (cd $$d && zip -q $(CURDIR)/dist/$$name.zip kongkow.exe) ;; \
+	    *) tar -C $$d -czf dist/$$name.tar.gz kongkow ;; \
+	  esac || exit 1; \
+	done
+	@cd dist && (command -v sha256sum >/dev/null && sha256sum *.tar.gz *.zip || shasum -a 256 *.tar.gz *.zip) >checksums.txt
+	@ls dist
 
 clean: ## Remove build output
 	rm -rf bin bins dist
