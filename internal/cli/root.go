@@ -92,7 +92,7 @@ func envelopeName(cmd *cobra.Command) string {
 func newRoot() *cobra.Command {
 	root := &cobra.Command{
 		Use:           "kongkow",
-		Short:         "Local-first drafts and publish destinations, for people and AI agents",
+		Short:         "Draft, schedule and publish your social media posts locally. For you and your AI agent.",
 		SilenceErrors: true,
 		SilenceUsage:  true,
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {

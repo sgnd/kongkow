@@ -27,7 +27,7 @@ body:
       label: Does it fit kongkow?
       description: See [CONTRIBUTING.md](https://github.com/sgnd/kongkow/blob/main/CONTRIBUTING.md#before-you-add-something).
       options:
-        - label: It is about local content, publish destinations or the local vault — not SSH, servers or DevOps (that is komando)
+        - label: It is about local content, publish destinations or the local vault, not SSH, servers or DevOps (that is komando)
           required: true
         - label: It can work as a plain command, for a person and for an AI agent (no windows)
           required: true

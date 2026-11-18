@@ -10,16 +10,16 @@ in without turning kongkow into a required online client.
 
 ## Suggested interfaces (not implemented)
 
-1. **SyncProvider** — optional backup/sync of the sealed store between
+1. **SyncProvider**: optional backup/sync of the sealed store between
    devices the person owns. Would sit behind an interface in
    `internal/sync` (package does not exist yet). The CLI would call it only
    when configured; offline use stays complete without it.
 
-2. **TeamDirectory** — optional shared destination or collection names for
+2. **TeamDirectory**: optional shared destination or collection names for
    a team. Would never replace the local vault; secrets stay local unless a
    person explicitly opts into a future shared secret store.
 
-3. **Identity / SSO** — out of scope for the OSS binary. Any future login
+3. **Identity / SSO**: out of scope for the OSS binary. Any future login
    (including third-party IdPs) belongs in a separate commercial surface,
    not as a hard dependency of `kongkow` commands.
 

@@ -3,36 +3,45 @@
 [![CI](https://github.com/sgnd/kongkow/actions/workflows/ci.yml/badge.svg)](https://github.com/sgnd/kongkow/actions/workflows/ci.yml)
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](LICENSE)
 
-**All-in-one social media for the command line.** Draft once, schedule, and publish — you and your AI agent, same CLI.
+**One local command line to draft, schedule and publish your social media posts. For you and your AI agent.**
 
-kongkow is a **local-first open-source CLI** for social posts: write on this computer, keep tokens in a sealed E2EE vault (`~/.kongkow`), and ship to the destinations you connect. It is not a thin client of [efolusi.com](https://efolusi.com) or any cloud content API.
-
-Today the OSS binary publishes to **Telegram**, **Mastodon**, **Bluesky** and a **file** sink, with local schedule and audit. More networks belong on the product roadmap; this repo stays honest about what the binary can do right now.
+You may write a post in one app, schedule it in another and keep the
+tokens for each network somewhere else again. kongkow keeps all of it on
+your own computer, behind one command that you and an AI agent (Claude
+Code, Codex, Cursor, Gemini CLI, your own bot) can both use safely:
 
 - **One place** for drafts, destinations, collections and bookmarks.
-- **Write once, publish to the destinations you add** — dry-run first, then send.
-- **Secrets stay in a sealed vault.** An AI agent never sees them.
+- **Write once, send to many.** Telegram, Mastodon, Bluesky and a file
+  folder today. Dry-run first, then publish.
+- **Your own schedule.** Daily post times per destination, and a
+  scheduler that runs on your machine.
+- **Tokens stay in an encrypted vault** in `~/.kongkow`, sealed with a
+  key on this computer. An AI agent never sees them.
 - **Readable text for you, JSON for an agent.**
-- **Local schedule and audit** for publishes and mutations.
-- **One static binary**, pure Go (`CGO_ENABLED=0`).
+- **A record of everything** that was published or changed, and by whom.
+- **One file to install**, no account, no telemetry.
 
-> Tip (Bahasa): *Kongkow* = ngobrol santai. All-in-one social media di mesin Anda —
-> draft, jadwal, publish — bukan klien tipis ke API cloud.
+*Kongkow* is Indonesian for a relaxed chat with friends.
 
 ## Install
 
-From a clone:
+On macOS or Linux, open a terminal and paste:
 
 ```bash
-make build
-./bin/kongkow version
+curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/sgnd/kongkow/main/install.sh | sh
 ```
 
-When releases exist:
+On Windows, download `kongkow_windows_amd64.zip` from
+[Releases](https://github.com/sgnd/kongkow/releases) and put `kongkow.exe`
+in a folder on your `PATH`.
+
+Check that it works:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/sgnd/kongkow/main/install.sh | sh
+kongkow version
 ```
+
+To build from a clone instead: `make build`, then `./bin/kongkow version`.
 
 ## First commands
 
@@ -91,4 +100,4 @@ is available when the AGPL does not fit. See [CLA.md](CLA.md) for contributions.
 - Server and DevOps work belongs in [komando](https://github.com/sgnd/komando),
   not here.
 - Future Sync/Team ideas are sketched only in
-  [docs/design/extensions.md](docs/design/extensions.md) — not implemented.
+  [docs/design/extensions.md](docs/design/extensions.md). None of it is built.
