@@ -154,3 +154,12 @@ func TestStuckJobInDoctorAndCancel(t *testing.T) {
 		t.Fatalf("status %q", j.Status)
 	}
 }
+
+func TestTooLongForBluesky(t *testing.T) {
+	setupJobs(t)
+	run(t, 0, "post", "draft", "long", "--body", strings.Repeat("a", 301))
+	run(t, 0, "dest", "add", "bs", "--kind", "bluesky", "--target", "me.bsky.social", "--secret-ref", "secret:bs")
+	run(t, out.ExitUsage, "post", "publish", "long", "--to", "bs", "--dry-run")
+	run(t, out.ExitUsage, "post", "schedule", "long", "--to", "bs", "--at", "2030-01-01 10:00")
+	run(t, out.ExitUsage, "dest", "add", "m", "--kind", "mastodon", "--target", "http://mastodon.social", "--secret-ref", "secret:m")
+}

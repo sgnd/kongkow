@@ -5,6 +5,9 @@ the release workflow takes its notes from that section.
 
 ## [0.1.0]
 
+- Publish to Mastodon (instance + access token) and Bluesky (handle + app
+  password). Text limits (500 and 300 characters) are checked before
+  anything is sent or scheduled.
 - Local posts, collections, bookmarks and destinations in a sealed store.
 - Publish to Telegram and a file sink; dry-run first.
 - Secrets in a sealed vault, referenced as `secret:NAME`.

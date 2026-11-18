@@ -291,6 +291,9 @@ func postPublishCmd() *cobra.Command {
 				return err
 			}
 			content := dest.Content{Name: p.Name, Title: p.Title, Body: p.Body, Media: p.Media}
+			if err := checkLength(d, content); err != nil {
+				return err
+			}
 			if g.dryRun {
 				out.P.Print("post publish", map[string]any{
 					"name": p.Name, "dest": d.Name, "kind": d.Kind, "action": "would_publish",
@@ -342,6 +345,10 @@ func postScheduleCmd() *cobra.Command {
 						"destination %q is not in the store", to)
 				}
 				if err := protectDest(d, "scheduling a publish"); err != nil {
+					return err
+				}
+				p := s.Posts[args[0]]
+				if err := checkLength(d, dest.Content{Name: p.Name, Title: p.Title, Body: p.Body, Media: p.Media}); err != nil {
 					return err
 				}
 				id, err := newJobID()
@@ -610,4 +617,14 @@ func staleJobs(st *store.State) []string {
 		}
 	}
 	return ids
+}
+
+// checkLength refuses a post that is too long for d's network, before
+// anything is sent or scheduled.
+func checkLength(d *store.Dest, c dest.Content) error {
+	if err := dest.CheckLength(d, c); err != nil {
+		return out.Errf(out.ExitUsage, "POST_TOO_LONG",
+			"shorten the post with `kongkow post edit NAME`", "%v", err)
+	}
+	return nil
 }

@@ -51,10 +51,12 @@ komando: an open-source CLI first, then paid apps and a paid cloud.
 
 | Item | Status |
 |---|---|
-| Publish to Mastodon and Bluesky (open APIs first) | open |
+| Publish to Mastodon and Bluesky (open APIs first) | done (text only; media upload is a separate item) |
 | Publish to X and LinkedIn | open, needs owner's developer apps (may cost money) |
 | One post to many destinations: `post publish NAME --to A,B` | open |
-| Per-network text limits and checks before publish | open |
+| Per-network text limits and checks before publish | done for Mastodon (500) and Bluesky (300) |
+| Media upload to Mastodon and Bluesky (today media paths are listed as text) | open |
+| Bluesky links and mentions as rich-text facets | open |
 | `kongkow schedule run --watch`: a local scheduler loop, plus a launchd/systemd example | open |
 | Queue slots (post times per destination, `post queue`) | open |
 | Self-host guide: run the scheduler on your own server | open |

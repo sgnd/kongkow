@@ -37,6 +37,9 @@ Collections and bookmarks
 Destinations
   kongkow dest add NAME --kind file --target DIR
   kongkow dest add NAME --kind telegram --target CHAT_ID --secret-ref secret:TOKEN
+  kongkow dest add NAME --kind mastodon --target https://INSTANCE --secret-ref secret:TOKEN
+  kongkow dest add NAME --kind bluesky --target HANDLE --secret-ref secret:APP_PASSWORD
+  Text limits: Mastodon 500, Bluesky 300 characters; checked before sending.
   kongkow dest list | show NAME | edit NAME | rm NAME | test NAME
   Never put bot tokens on the command line: store them with secret set first.
   A --protected destination needs --yes to edit, remove or publish.

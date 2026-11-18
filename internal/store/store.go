@@ -62,9 +62,11 @@ type Dest struct {
 const (
 	DestTelegram = "telegram"
 	DestFile     = "file"
+	DestMastodon = "mastodon"
+	DestBluesky  = "bluesky"
 )
 
-var DestKinds = []string{DestTelegram, DestFile}
+var DestKinds = []string{DestTelegram, DestMastodon, DestBluesky, DestFile}
 
 // Collection groups posts.
 type Collection struct {

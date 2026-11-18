@@ -1,4 +1,4 @@
-// Package dest publishes posts to Telegram and file sinks.
+// Package dest publishes posts to Telegram, Mastodon, Bluesky and file sinks.
 package dest
 
 import (
@@ -39,6 +39,10 @@ func Publish(ctx context.Context, d *store.Dest, c Content, resolve ResolveToken
 		return publishFile(d, c)
 	case store.DestTelegram:
 		return publishTelegram(ctx, d, c, resolve)
+	case store.DestMastodon:
+		return publishMastodon(ctx, d, c, resolve)
+	case store.DestBluesky:
+		return publishBluesky(ctx, d, c, resolve)
 	default:
 		return nil, fmt.Errorf("destination kind %q is not supported", d.Kind)
 	}
@@ -82,6 +86,10 @@ func Test(ctx context.Context, d *store.Dest, resolve ResolveToken) (*Result, er
 			return nil, err
 		}
 		return &Result{Dest: d.Name, Kind: d.Kind, Target: d.Target, Detail: "bot @" + me}, nil
+	case store.DestMastodon:
+		return testMastodon(ctx, d, resolve)
+	case store.DestBluesky:
+		return testBluesky(ctx, d, resolve)
 	default:
 		return nil, fmt.Errorf("destination kind %q is not supported", d.Kind)
 	}
