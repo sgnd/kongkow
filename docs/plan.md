@@ -31,11 +31,11 @@ komando: an open-source CLI first, then paid apps and a paid cloud.
 
 | Item | Status |
 |---|---|
-| Tests for `store` (load, update, sealed backend) | open |
-| Tests for `vault` (set, resolve, hidden output) | open |
-| Tests for `sealdb` audit log | open |
-| Tests for `dest` Telegram with a fake HTTP server | open |
-| CLI tests for collection, bookmark, secret, doctor, list, audit | open |
+| Tests for `store` (load, update, sealed backend) | done |
+| Tests for `vault` (set, resolve, hidden output) | done |
+| Tests for `sealdb` audit log | done |
+| Tests for `dest` Telegram with a fake HTTP server | done |
+| CLI tests for collection, bookmark, secret, doctor, list, audit | done |
 
 ## Milestone 3: commands and polish
 
