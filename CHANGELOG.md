@@ -13,6 +13,8 @@ past the `KONGKOW_HOME` guard. v0.1.1 fixes it.
   checked.
 - `--media` takes regular files only, so a device or folder cannot hang a
   publish.
+- A file destination never replaces a post it wrote before. Two posts in
+  the same second used to share one name; the second now gets `_2`.
 - CI runs the built binary through its main commands (`scripts/smoke.sh`).
 
 ## [0.1.0]

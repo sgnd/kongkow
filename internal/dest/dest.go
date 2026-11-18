@@ -3,6 +3,7 @@ package dest
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -109,7 +110,7 @@ func publishFile(d *store.Dest, c Content) (*Result, error) {
 	if name == "" {
 		name = "post"
 	}
-	path := filepath.Join(dir, stamp+"_"+name+".md")
+	base := filepath.Join(dir, stamp+"_"+name)
 	var b strings.Builder
 	if c.Title != "" {
 		b.WriteString("# " + c.Title + "\n\n")
@@ -124,7 +125,8 @@ func publishFile(d *store.Dest, c Content) (*Result, error) {
 			b.WriteString("- " + m + "\n")
 		}
 	}
-	if err := os.WriteFile(path, []byte(b.String()), 0o600); err != nil {
+	path, err := writeNew(base, ".md", []byte(b.String()))
+	if err != nil {
 		return nil, err
 	}
 	return &Result{Dest: d.Name, Kind: d.Kind, Target: dir, Path: path, Detail: "wrote file"}, nil
@@ -142,4 +144,28 @@ func sanitizeFile(s string) string {
 		}
 	}
 	return b.String()
+}
+
+// writeNew writes data to base+ext, or to base_2+ext, base_3+ext and so on
+// when that name is taken: two posts in the same second never overwrite.
+func writeNew(base, ext string, data []byte) (string, error) {
+	for i := 1; i <= 1000; i++ {
+		path := base + ext
+		if i > 1 {
+			path = fmt.Sprintf("%s_%d%s", base, i, ext)
+		}
+		f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+		if errors.Is(err, os.ErrExist) {
+			continue
+		}
+		if err != nil {
+			return "", err
+		}
+		if _, err := f.Write(data); err != nil {
+			f.Close()
+			return "", err
+		}
+		return path, f.Close()
+	}
+	return "", fmt.Errorf("%s%s and 1000 numbered names after it already exist", base, ext)
 }
