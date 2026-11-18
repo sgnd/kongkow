@@ -31,6 +31,7 @@ type Post struct {
 	Title      string            `json:"title,omitempty"`
 	Body       string            `json:"body,omitempty"`
 	Media      []string          `json:"media,omitempty"` // local file paths
+	Alt        []string          `json:"alt,omitempty"`   // alt text per media file, same order
 	Collection string            `json:"collection,omitempty"`
 	Tags       []string          `json:"tags,omitempty"`
 	Labels     map[string]string `json:"labels,omitempty"`

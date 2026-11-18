@@ -18,6 +18,7 @@ type Content struct {
 	Title string
 	Body  string
 	Media []string
+	Alt   []string // alt text per media file, same order
 }
 
 // Result is one publish outcome.

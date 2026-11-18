@@ -24,13 +24,14 @@ const (
 // bskyService is the Bluesky PDS address; tests point it at a fake server.
 var bskyService = "https://bsky.social"
 
-// postText is the text sent to a network: title, body, then media paths.
-func postText(c Content) string {
+// postText is the text sent to a network: title, body, then media paths,
+// except where the network gets the images themselves.
+func postText(d *store.Dest, c Content) string {
 	text := c.Body
 	if c.Title != "" {
 		text = c.Title + "\n\n" + c.Body
 	}
-	if len(c.Media) > 0 {
+	if len(c.Media) > 0 && !uploadsMedia(d) {
 		text += "\n\nMedia:\n" + strings.Join(c.Media, "\n")
 	}
 	if strings.TrimSpace(text) == "" {
@@ -48,7 +49,7 @@ func CheckLength(d *store.Dest, c Content) error {
 	case store.DestBluesky:
 		limit = blueskyLimit
 	}
-	if n := utf8.RuneCountInString(postText(c)); limit > 0 && n > limit {
+	if n := utf8.RuneCountInString(postText(d, c)); limit > 0 && n > limit {
 		return fmt.Errorf("%s allows %d characters; this post has %d", d.Kind, limit, n)
 	}
 	return nil
@@ -93,6 +94,10 @@ func publishMastodon(ctx context.Context, d *store.Dest, c Content, resolve Reso
 	if err != nil {
 		return nil, err
 	}
+	imgs, err := loadImages(d, c)
+	if err != nil {
+		return nil, err
+	}
 	tok, err := needToken(d, resolve, "access token")
 	if err != nil {
 		return nil, err
@@ -100,7 +105,18 @@ func publishMastodon(ctx context.Context, d *store.Dest, c Content, resolve Reso
 	var res struct {
 		URL string `json:"url"`
 	}
-	payload := map[string]any{"status": postText(c)}
+	payload := map[string]any{"status": postText(d, c)}
+	var ids []string
+	for _, img := range imgs {
+		id, err := mastodonUpload(ctx, base, tok, img)
+		if err != nil {
+			return nil, fmt.Errorf("mastodon: %w", err)
+		}
+		ids = append(ids, id)
+	}
+	if len(ids) > 0 {
+		payload["media_ids"] = ids
+	}
 	if v := d.Options["visibility"]; v != "" {
 		payload["visibility"] = v
 	}
@@ -151,6 +167,10 @@ func publishBluesky(ctx context.Context, d *store.Dest, c Content, resolve Resol
 	if err := CheckLength(d, c); err != nil {
 		return nil, err
 	}
+	imgs, err := loadImages(d, c)
+	if err != nil {
+		return nil, err
+	}
 	s, err := bskyLogin(ctx, d, resolve)
 	if err != nil {
 		return nil, err
@@ -158,7 +178,7 @@ func publishBluesky(ctx context.Context, d *store.Dest, c Content, resolve Resol
 	var res struct {
 		URI string `json:"uri"`
 	}
-	text := postText(c)
+	text := postText(d, c)
 	record := map[string]any{
 		"$type":     "app.bsky.feed.post",
 		"text":      text,
@@ -166,6 +186,17 @@ func publishBluesky(ctx context.Context, d *store.Dest, c Content, resolve Resol
 	}
 	if fs := bskyFacets(text, func(h string) (string, error) { return bskyResolveHandle(ctx, h) }); len(fs) > 0 {
 		record["facets"] = fs
+	}
+	if len(imgs) > 0 {
+		var embeds []map[string]any
+		for _, img := range imgs {
+			blob, err := bskyUpload(ctx, s.AccessJwt, img)
+			if err != nil {
+				return nil, fmt.Errorf("bluesky: %w", err)
+			}
+			embeds = append(embeds, map[string]any{"alt": img.Alt, "image": blob})
+		}
+		record["embed"] = map[string]any{"$type": "app.bsky.embed.images", "images": embeds}
 	}
 	body := map[string]any{"repo": s.DID, "collection": "app.bsky.feed.post", "record": record}
 	if err := jsonCall(ctx, http.MethodPost, bskyService+"/xrpc/com.atproto.repo.createRecord", s.AccessJwt, body, &res); err != nil {
@@ -186,20 +217,24 @@ func testBluesky(ctx context.Context, d *store.Dest, resolve ResolveToken) (*Res
 // reads a JSON answer into out. A non-2xx answer becomes an error with the
 // server's message.
 func jsonCall(ctx context.Context, method, u, bearer string, body, out any) error {
-	var r io.Reader
-	if body != nil {
-		b, err := json.Marshal(body)
-		if err != nil {
-			return err
-		}
-		r = bytes.NewReader(b)
+	if body == nil {
+		return rawCall(ctx, method, u, bearer, "", nil, out)
 	}
-	req, err := http.NewRequestWithContext(ctx, method, u, r)
+	b, err := json.Marshal(body)
 	if err != nil {
 		return err
 	}
-	if body != nil {
-		req.Header.Set("Content-Type", "application/json")
+	return rawCall(ctx, method, u, bearer, "application/json", bytes.NewReader(b), out)
+}
+
+// rawCall sends body as contentType and reads a JSON answer into out.
+func rawCall(ctx context.Context, method, u, bearer, contentType string, body io.Reader, out any) error {
+	req, err := http.NewRequestWithContext(ctx, method, u, body)
+	if err != nil {
+		return err
+	}
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
 	}
 	if bearer != "" {
 		req.Header.Set("Authorization", "Bearer "+bearer)

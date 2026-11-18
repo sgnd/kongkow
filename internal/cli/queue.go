@@ -8,7 +8,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/sgnd/kongkow/internal/dest"
 	"github.com/sgnd/kongkow/internal/out"
 	"github.com/sgnd/kongkow/internal/store"
 )
@@ -90,7 +89,7 @@ func postQueueCmd() *cobra.Command {
 						"check the name; `kongkow post list` shows posts",
 						"post %q is not in the store", args[0])
 				}
-				content := dest.Content{Name: p.Name, Title: p.Title, Body: p.Body, Media: p.Media}
+				content := contentOf(p)
 				dests, err := checkDests(s, names, content, "scheduling a publish")
 				if err != nil {
 					return err

@@ -44,7 +44,8 @@ komando: an open-source CLI first, then paid apps and a paid cloud.
 | Stale `running` job recovery in `doctor` (job left by a crashed run) | done: doctor warns after 10 min; `post cancel` clears a stuck job |
 | `post status --run` exit code when a job fails | done: exit 1 |
 | Release workflow (tagged binaries for `install.sh`) | done: `release.yml`, `make dist`, CHANGELOG.md |
-| First release tag `v0.0.1` (semver from 0.0.1; tags group changes) | open, needs owner yes to tag |
+| First release tag `v0.0.1` (semver from 0.0.1; tags group changes) | done: released |
+| Release `v0.1.0` (queue slots, KONGKOW_HOME guard, Bluesky facets, images and alt text) | open, needs owner yes to tag |
 | Signed macOS binaries and signed checksums (like komando) | deferred: needs Apple Developer ID and a release signing key from the owner |
 
 ## Milestone 4: the killer feature, locally
@@ -52,10 +53,13 @@ komando: an open-source CLI first, then paid apps and a paid cloud.
 | Item | Status |
 |---|---|
 | Publish to Mastodon and Bluesky (open APIs first) | done (text only; media upload is a separate item) |
-| Publish to X and LinkedIn | open, needs owner's developer apps (may cost money) |
+| Publish to X and LinkedIn | split: see the two rows below |
+| Publish to LinkedIn | waiting: the owner creates the LinkedIn developer app (owner, 2026-11-18: "Ya, saya buat") |
+| Publish to X | deferred: the X API costs money; waits on the owner (owner, 2026-11-18: "Tidak sekarang") |
 | One post to many destinations: `post publish NAME --to A,B` | done: also `post schedule`; all checked before any is sent |
 | Per-network text limits and checks before publish | done for Mastodon (500) and Bluesky (300) |
-| Media upload to Mastodon and Bluesky (today media paths are listed as text) | open |
+| Media upload to Mastodon and Bluesky (today media paths are listed as text) | done: up to 4 images, checked before anything is sent |
+| Alt text for uploaded images (`post draft --alt`) | done: one `--alt` per image; new `--media` clears old alt texts |
 | Bluesky links and mentions as rich-text facets | done: a mention whose handle does not resolve stays plain text |
 | `kongkow schedule run --watch`: a local scheduler loop, plus a launchd/systemd example | done as `post status --run --every 1m` (one command for running jobs, not a second one) |
 | Queue slots (post times per destination, `post queue`) | done: `dest add/edit --slots`, `post queue NAME --to A,B` |
@@ -68,6 +72,8 @@ komando: an open-source CLI first, then paid apps and a paid cloud.
 | Item | Status |
 |---|---|
 | `efolusi/kongkow-apps`: Mac, iPhone, iPad app, built like komando-apps | deferred: waits on milestones 1-3 |
-| `efolusi/kongkow-cloud`: API, account, sync, billing, website, built like komando-cloud | deferred: waits on milestones 1-3 |
+| `efolusi/kongkow-cloud`: API, sync, hosted scheduler, website, built like komando-cloud | deferred: waits on milestones 1-3 |
+| Login and accounts | via sso: comes from `efolusi/sso`, never built in kongkow |
+| Plans, billing and checkout | via pay: comes from `efolusi/pay`, never built in kongkow |
 | Cloud sync end-to-end encrypted, hosted scheduler, team approval | deferred: part of kongkow-cloud |
 | More networks (X, Mastodon, Bluesky, LinkedIn) | moved up: see milestone 4 (the killer feature needs them) |

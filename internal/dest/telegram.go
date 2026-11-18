@@ -44,7 +44,7 @@ func publishTelegram(ctx context.Context, d *store.Dest, c Content, resolve Reso
 	if err != nil {
 		return nil, err
 	}
-	text := postText(c)
+	text := postText(d, c)
 	parseMode := ""
 	if d.Options != nil {
 		parseMode = d.Options["parse_mode"]

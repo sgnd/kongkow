@@ -40,6 +40,7 @@ func postCmd() *cobra.Command {
 
 func postDraftCmd() *cobra.Command {
 	var title, body, bodyFile, collection, media, tags string
+	var alt []string
 	c := &cobra.Command{
 		Use:   "draft NAME",
 		Short: "Create a local post draft",
@@ -61,11 +62,15 @@ func postDraftCmd() *cobra.Command {
 						"check the name; `kongkow collection list` shows collections",
 						"collection %q is not in the store", collection)
 				}
-				s.Posts[name] = &store.Post{
+				post := &store.Post{
 					Name: name, Title: title, Body: text, Collection: collection,
-					Media: splitCSV(media), Tags: splitCSV(tags),
+					Media: splitCSV(media), Alt: alt, Tags: splitCSV(tags),
 					CreatedAt: now, UpdatedAt: now,
 				}
+				if err := checkAlt(post); err != nil {
+					return err
+				}
+				s.Posts[name] = post
 				return nil
 			})
 			if err != nil {
@@ -82,6 +87,7 @@ func postDraftCmd() *cobra.Command {
 	c.Flags().StringVar(&bodyFile, "body-file", "", "read body from a file")
 	c.Flags().StringVar(&collection, "collection", "", "collection name")
 	c.Flags().StringVar(&media, "media", "", "comma-separated local media paths")
+	c.Flags().StringArrayVar(&alt, "alt", nil, "alt text for the images, once per image in --media order")
 	c.Flags().StringVar(&tags, "tags", "", "comma-separated tags")
 	return c
 }
@@ -174,6 +180,7 @@ func postShowCmd() *cobra.Command {
 
 func postEditCmd() *cobra.Command {
 	var title, body, bodyFile, collection, media, tags string
+	var alt []string
 	var setTitle, setBody, setCollection, setMedia, setTags bool
 	c := &cobra.Command{
 		Use:   "edit NAME",
@@ -213,6 +220,13 @@ func postEditCmd() *cobra.Command {
 				}
 				if setMedia {
 					p.Media = splitCSV(media)
+					p.Alt = nil
+				}
+				if cmd.Flags().Changed("alt") {
+					p.Alt = alt
+				}
+				if err := checkAlt(p); err != nil {
+					return err
 				}
 				if setTags {
 					p.Tags = splitCSV(tags)
@@ -234,6 +248,7 @@ func postEditCmd() *cobra.Command {
 	c.Flags().StringVar(&bodyFile, "body-file", "", "read body from a file")
 	c.Flags().StringVar(&collection, "collection", "", "collection name (empty clears)")
 	c.Flags().StringVar(&media, "media", "", "comma-separated local media paths")
+	c.Flags().StringArrayVar(&alt, "alt", nil, "alt text for the images, once per image in --media order")
 	c.Flags().StringVar(&tags, "tags", "", "comma-separated tags")
 	return c
 }
@@ -286,7 +301,7 @@ func postPublishCmd() *cobra.Command {
 					"check the name; `kongkow post list` shows posts",
 					"post %q is not in the store", args[0])
 			}
-			content := dest.Content{Name: p.Name, Title: p.Title, Body: p.Body, Media: p.Media}
+			content := contentOf(p)
 			// Every destination is checked before anything is sent, so a
 			// bad name or a too-long post never leaves a half-done publish.
 			dests, err := checkDests(st, names, content, "publishing")
@@ -380,6 +395,9 @@ func checkDests(s *store.State, names []string, c dest.Content, doing string) ([
 		if err := checkLength(d, c); err != nil {
 			return nil, err
 		}
+		if err := checkMedia(d, c); err != nil {
+			return nil, err
+		}
 		ds = append(ds, d)
 	}
 	return ds, nil
@@ -411,7 +429,7 @@ func postScheduleCmd() *cobra.Command {
 						"check the name; `kongkow post list` shows posts",
 						"post %q is not in the store", args[0])
 				}
-				content := dest.Content{Name: p.Name, Title: p.Title, Body: p.Body, Media: p.Media}
+				content := contentOf(p)
 				dests, err := checkDests(s, names, content, "scheduling a publish")
 				if err != nil {
 					return err
@@ -611,9 +629,7 @@ func runDueJobs() ([]jobRow, error) {
 		if !claimed {
 			continue
 		}
-		res, pubErr := dest.Publish(context.Background(), d, dest.Content{
-			Name: p.Name, Title: p.Title, Body: p.Body, Media: p.Media,
-		}, vault.Resolve)
+		res, pubErr := dest.Publish(context.Background(), d, contentOf(p), vault.Resolve)
 		_ = store.Update(func(s *store.State) error {
 			jj := s.Jobs[id]
 			if jj == nil {
@@ -722,6 +738,15 @@ func checkLength(d *store.Dest, c dest.Content) error {
 	return nil
 }
 
+// checkMedia refuses media d's network cannot take, before anything is sent.
+func checkMedia(d *store.Dest, c dest.Content) error {
+	if err := dest.CheckMedia(d, c); err != nil {
+		return out.Errf(out.ExitUsage, "MEDIA_NOT_ALLOWED",
+			"change the images with `kongkow post edit NAME --media a.jpg,b.png`", "%v", err)
+	}
+	return nil
+}
+
 // addJobs adds one pending job per destination, at the time at gives it.
 func addJobs(s *store.State, post string, dests []*store.Dest, at func(*store.Dest) (time.Time, error)) ([]map[string]any, error) {
 	var rows []map[string]any
@@ -757,4 +782,17 @@ func printJobs(command string, rows []map[string]any) {
 		return
 	}
 	out.P.Print(command, map[string]any{"jobs": rows}, nil)
+}
+
+// contentOf is what a post sends to a destination.
+func contentOf(p *store.Post) dest.Content {
+	return dest.Content{Name: p.Name, Title: p.Title, Body: p.Body, Media: p.Media, Alt: p.Alt}
+}
+
+// checkAlt refuses more alt texts than images.
+func checkAlt(p *store.Post) error {
+	if len(p.Alt) > len(p.Media) {
+		return out.Usage("%d --alt texts for %d images; give one --alt per --media file, in order", len(p.Alt), len(p.Media))
+	}
+	return nil
 }

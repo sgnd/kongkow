@@ -222,3 +222,35 @@ func TestWatchFlagRules(t *testing.T) {
 	run(t, out.ExitUsage, "post", "status", "--run", "--every", "1s")
 	run(t, out.ExitUsage, "post", "status", "--run", "--every", "1m", "--dry-run")
 }
+
+func TestMediaCheckedBeforeSend(t *testing.T) {
+	setupJobs(t)
+	txt := filepath.Join(t.TempDir(), "notes.txt")
+	if err := os.WriteFile(txt, []byte("not an image"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	run(t, 0, "post", "draft", "pic", "--body", "hi", "--media", txt)
+	run(t, 0, "dest", "add", "bs", "--kind", "bluesky", "--target", "me.bsky.social", "--secret-ref", "secret:bs")
+	run(t, out.ExitUsage, "post", "publish", "pic", "--to", "bs", "--dry-run")
+	run(t, out.ExitUsage, "post", "schedule", "pic", "--to", "bs", "--at", "2030-01-01 10:00")
+	run(t, 0, "post", "publish", "pic", "--to", "f1") // a file sink takes any path
+}
+
+func TestAltText(t *testing.T) {
+	setupJobs(t)
+	run(t, out.ExitUsage, "post", "draft", "a", "--media", "x.png", "--alt", "one", "--alt", "two")
+	run(t, 0, "post", "draft", "a", "--media", "x.png,y.png", "--alt", "one, with a comma", "--alt", "two")
+	st, err := store.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if alt := st.Posts["a"].Alt; len(alt) != 2 || alt[0] != "one, with a comma" {
+		t.Fatalf("alt %q", alt)
+	}
+	// New images drop the old alt texts, so they never describe the wrong file.
+	run(t, 0, "post", "edit", "a", "--media", "z.png")
+	st, _ = store.Load()
+	if len(st.Posts["a"].Alt) != 0 {
+		t.Fatalf("alt kept after new media: %q", st.Posts["a"].Alt)
+	}
+}

@@ -45,6 +45,7 @@ kongkow post publish hello --to local
 kongkow dest add tg --kind telegram --target CHAT_ID --secret-ref secret:tg_bot
 kongkow dest add masto --kind mastodon --target https://mastodon.social --secret-ref secret:masto
 kongkow dest add bsky --kind bluesky --target you.bsky.social --secret-ref secret:bsky
+kongkow post draft pic --body 'New logo' --media logo.png --alt 'Red kongkow logo'   # up to 4 images
 kongkow post schedule hello --to local --at '2030-01-01 09:00'
 kongkow post status --run
 kongkow post cancel JOB      # only a pending job
