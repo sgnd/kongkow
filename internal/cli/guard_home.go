@@ -9,17 +9,12 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/sgnd/kongkow/internal/out"
+	"github.com/sgnd/kongkow/internal/store"
 )
 
-// An AI agent's kongkow keeps the person's data folder, ~/.kongkow.
-// KONGKOW_HOME moves it: pointed at a new folder, kongkow would know none
-// of the person's protected destinations and would write its audit log
-// there, out of the person's sight. So for an agent a KONGKOW_HOME that is
-// another folder stops every command that reads data, a dry run too, and
-// no flag lets it through. A person who keeps the data elsewhere can make
-// ~/.kongkow a link to it: a link to the same folder counts as ~/.kongkow.
-// The home folder comes from the system's user database, so an agent's
-// HOME=/x does not move it.
+// An AI agent's kongkow works only in the person's ~/.kongkow, found through
+// the user database, so neither KONGKOW_HOME nor HOME can move it elsewhere.
+// A link to ~/.kongkow counts as ~/.kongkow.
 
 // defaultHome is ~/.kongkow in the account's home folder. Tests replace it.
 var defaultHome = func() string {
@@ -49,8 +44,8 @@ func sameDir(a, b string) bool {
 // homeFree are the commands that read no data, so they run anywhere.
 var homeFree = map[string]bool{"kongkow": true, "help": true, "completion": true, "version": true, "guide": true}
 
-// guardHome stops an AI agent's command when KONGKOW_HOME names another
-// folder than ~/.kongkow. The stop is final: exit 6, no --yes.
+// guardHome stops an AI agent's command when its data folder is not
+// ~/.kongkow. The stop is final: exit 6, no --yes.
 func guardHome(cmd *cobra.Command) error {
 	top := strings.Fields(cmd.CommandPath())
 	name := "kongkow"
@@ -60,12 +55,12 @@ func guardHome(cmd *cobra.Command) error {
 	if homeFree[name] || !isAgent() {
 		return nil
 	}
-	h := os.Getenv("KONGKOW_HOME")
-	if h == "" || sameDir(h, defaultHome()) {
+	h := store.Home()
+	if sameDir(h, defaultHome()) {
 		return nil
 	}
 	return out.Errf(out.ExitPolicy, "OTHER_HOME",
-		"take KONGKOW_HOME out of the command's environment and run it again; no flag lets an AI agent use another data folder",
-		"KONGKOW_HOME points kongkow at %s, not at %s: its destinations, protection and audit log are not the usual ones, so an AI agent cannot use it",
+		"take KONGKOW_HOME and any changed HOME out of the command's environment and run it again; no flag lets an AI agent use another data folder",
+		"kongkow would use %s, not %s: its destinations, protection and audit log are not the usual ones, so an AI agent cannot use it",
 		h, defaultHome())
 }

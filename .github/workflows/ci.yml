@@ -24,6 +24,7 @@ jobs:
       - run: make lint
       - run: make test
       - run: make build
+      - run: scripts/smoke.sh ./bin/kongkow
 
   cross:
     name: Build and vet (${{ matrix.goos }}/${{ matrix.goarch }})

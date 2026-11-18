@@ -3,6 +3,20 @@
 All notable changes to kongkow. Each release has a section `## [X.Y.Z]`;
 the release workflow takes its notes from that section.
 
+## [0.1.1] - 2026-11-18
+
+Please update. In v0.1.0, setting `HOME` could move an AI agent's store
+past the `KONGKOW_HOME` guard. v0.1.1 fixes it.
+
+- An AI agent's kongkow now also stops when a changed `HOME` would move
+  its data folder away from `~/.kongkow`. Before, only `KONGKOW_HOME` was
+  checked.
+- `--media` takes regular files only, so a device or folder cannot hang a
+  publish.
+- A file destination never replaces a post it wrote before. Two posts in
+  the same second used to share one name; the second now gets `_2`.
+- CI runs the built binary through its main commands (`scripts/smoke.sh`).
+
 ## [0.1.0]
 
 - Images in `--media` are uploaded to Mastodon and Bluesky (up to 4 JPEG,
