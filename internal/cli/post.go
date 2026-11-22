@@ -326,9 +326,9 @@ func postPublishCmd() *cobra.Command {
 				if err != nil {
 					failed++
 					lastErr = err
-					audit(st, "post publish", false, map[string]any{"name": p.Name, "dest": d.Name, "error": err.Error()})
+					audit(st, "post publish", false, map[string]any{"name": p.Name, "dest": d.Name, "error": dest.Redact(err.Error())})
 					rows = append(rows, map[string]any{
-						"name": p.Name, "dest": d.Name, "kind": d.Kind, "action": "failed", "error": err.Error(),
+						"name": p.Name, "dest": d.Name, "kind": d.Kind, "action": "failed", "error": dest.Redact(err.Error()),
 					})
 					continue
 				}
@@ -493,7 +493,7 @@ func jobLine(j jobRow, withTime bool) string {
 	case j.URL != "":
 		line += "  " + out.SafeText(j.URL)
 	case j.Result != "" && j.Status != store.JobPending:
-		line += "  " + out.SafeText(j.Result)
+		line += "  " + out.SafeText(dest.Redact(j.Result))
 	}
 	return line + "\n"
 }
@@ -514,7 +514,7 @@ func publishedRow(post string, d *store.Dest, res *dest.Result) map[string]any {
 func applyResult(j *store.Job, res *dest.Result, pubErr error, now time.Time) {
 	j.UpdatedAt = now
 	if pubErr != nil {
-		j.Status, j.Result, j.URL = store.JobFailed, pubErr.Error(), ""
+		j.Status, j.Result, j.URL = store.JobFailed, dest.Redact(pubErr.Error()), ""
 		return
 	}
 	j.Status, j.Result, j.URL = store.JobDone, res.Detail, res.URL
@@ -524,7 +524,31 @@ func applyResult(j *store.Job, res *dest.Result, pubErr error, now time.Time) {
 }
 
 func rowOf(j *store.Job) jobRow {
-	return jobRow{ID: j.ID, Post: j.Post, Dest: j.Dest, At: j.At, Status: j.Status, Result: j.Result, URL: j.URL}
+	return jobRow{ID: j.ID, Post: j.Post, Dest: j.Dest, At: j.At, Status: j.Status, Result: dest.Redact(j.Result), URL: j.URL}
+}
+
+// scrubSavedResults removes bot tokens from the results that an earlier
+// version saved on failed jobs (it put the request URL in the error text).
+func scrubSavedResults() {
+	st, err := store.Load()
+	if err != nil {
+		return
+	}
+	dirty := false
+	for _, j := range st.Jobs {
+		if dest.Redact(j.Result) != j.Result {
+			dirty = true
+		}
+	}
+	if !dirty || g.dryRun {
+		return
+	}
+	_ = store.Update(func(s *store.State) error {
+		for _, j := range s.Jobs {
+			j.Result = dest.Redact(j.Result)
+		}
+		return nil
+	})
 }
 
 func postStatusCmd() *cobra.Command {
@@ -549,6 +573,7 @@ func postStatusCmd() *cobra.Command {
 				defer stop()
 				return watchJobs(ctx, every)
 			}
+			scrubSavedResults()
 			var ran []jobRow
 			if run && !g.dryRun {
 				var err error
@@ -687,8 +712,8 @@ func runDueJobs() ([]jobRow, error) {
 		})
 		if pubErr != nil {
 			row.Status = store.JobFailed
-			row.Result = pubErr.Error()
-			audit(st, "post status --run", false, map[string]any{"id": id, "error": pubErr.Error()})
+			row.Result = dest.Redact(pubErr.Error())
+			audit(st, "post status --run", false, map[string]any{"id": id, "error": dest.Redact(pubErr.Error())})
 		} else {
 			row.Status = store.JobDone
 			row.Result = res.Detail

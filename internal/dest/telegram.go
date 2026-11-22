@@ -95,7 +95,7 @@ func tgCall(ctx context.Context, token, method string, payload any, out any) err
 	}
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return err
+		return scrubErr(err)
 	}
 	defer resp.Body.Close()
 	raw, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))

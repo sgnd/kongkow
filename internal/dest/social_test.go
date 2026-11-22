@@ -45,13 +45,16 @@ func newFakeAPI(t *testing.T, replies map[string]string) *fakeAPI {
 func secretResolver(ref string) (string, error) { return "SECRET", nil }
 
 func TestMastodonPublish(t *testing.T) {
-	f := newFakeAPI(t, map[string]string{"/api/v1/statuses": `{"url":"https://m.example/@me/1"}`})
+	replies := map[string]string{}
+	f := newFakeAPI(t, replies)
+	link := "https://" + strings.TrimPrefix(f.srv.URL, "http://") + "/@me/1"
+	replies["/api/v1/statuses"] = `{"url":"` + link + `"}`
 	d := &store.Dest{Name: "m", Kind: store.DestMastodon, Target: f.srv.URL, SecretRef: "secret:m"}
 	r, err := Publish(t.Context(), d, Content{Title: "Hi", Body: "world"}, secretResolver)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if r.Detail != "posted https://m.example/@me/1" {
+	if r.Detail != "posted "+link {
 		t.Fatalf("detail %q", r.Detail)
 	}
 	if f.got["/api/v1/statuses"]["status"] != "Hi\n\nworld" || f.auth["/api/v1/statuses"] != "Bearer SECRET" {

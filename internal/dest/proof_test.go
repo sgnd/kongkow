@@ -1,6 +1,7 @@
 package dest
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/sgnd/kongkow/internal/store"
@@ -9,14 +10,17 @@ import (
 // Publish proof: every result that has a public page names it in URL.
 
 func TestMastodonResultHasURL(t *testing.T) {
-	f := newFakeAPI(t, map[string]string{"/api/v1/statuses": `{"url":"https://m.example/@me/1"}`})
+	replies := map[string]string{}
+	f := newFakeAPI(t, replies)
+	want := "https://" + strings.TrimPrefix(f.srv.URL, "http://") + "/@me/1"
+	replies["/api/v1/statuses"] = `{"url":"` + want + `"}`
 	d := &store.Dest{Name: "m", Kind: store.DestMastodon, Target: f.srv.URL, SecretRef: "secret:m"}
 	r, err := Publish(t.Context(), d, Content{Body: "x"}, secretResolver)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if r.URL != "https://m.example/@me/1" {
-		t.Errorf("url %q", r.URL)
+	if r.URL != want {
+		t.Errorf("url %q, want %q", r.URL, want)
 	}
 }
 
@@ -43,6 +47,10 @@ func TestBlueskyURLFromURI(t *testing.T) {
 		{"at://did:plc:me/app.bsky.feed.post/3k", "me.bsky.social", "https://bsky.app/profile/me.bsky.social/post/3k"},
 		{"at://did:plc:me/app.bsky.feed.post/3k", "", "https://bsky.app/profile/did:plc:me/post/3k"},
 		{"at://did:plc:me/app.bsky.feed.like/3k", "me", ""}, // not a post
+		{"at://did:plc:me/app.bsky.feed.post/3k?x=1#y", "me", ""},
+		{"at://did:plc:me/app.bsky.feed.post/../../x", "me", ""},
+		{"at://did:plc:m e/app.bsky.feed.post/3k", "me", ""},
+		{"at://did:plc:me/app.bsky.feed.post/3k", "me/../x", ""},
 		{"https://evil.example/x", "me", ""},
 		{"", "me", ""},
 	}

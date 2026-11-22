@@ -136,3 +136,21 @@ func TestEveryCommandHasHelp(t *testing.T) {
 		}
 	}
 }
+
+// The release workflow cuts the notes from the line "## vX.Y.Z " (with the
+// space), so every release heading must be exactly "## vX.Y.Z - YYYY-MM-DD".
+func TestChangelogHeadingsMatchTheReleaseWorkflow(t *testing.T) {
+	heading := regexp.MustCompile(`^## v\d+\.\d+\.\d+ - \d{4}-\d{2}-\d{2}$`)
+	n := 0
+	for _, line := range strings.Split(repoFile(t, "CHANGELOG.md"), "\n") {
+		if strings.HasPrefix(line, "## ") {
+			n++
+			if !heading.MatchString(line) {
+				t.Errorf("CHANGELOG heading %q is not \"## vX.Y.Z - YYYY-MM-DD\"", line)
+			}
+		}
+	}
+	if n == 0 {
+		t.Fatal("no release headings in CHANGELOG.md")
+	}
+}

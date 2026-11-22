@@ -94,7 +94,7 @@ func tokenChecks(ctx context.Context, st *store.State, test func(context.Context
 		res, err := test(cctx, d)
 		cancel()
 		if err != nil {
-			checks = append(checks, doctorCheck{"token " + n, false, out.SafeText(err.Error()) + ": fix the token with `kongkow secret set`, then run doctor again"})
+			checks = append(checks, doctorCheck{"token " + n, false, out.SafeText(dest.Redact(err.Error())) + ": fix the token with `kongkow secret set`, then run doctor again"})
 			continue
 		}
 		checks = append(checks, doctorCheck{"token " + n, true, out.SafeText(res.Detail)})
@@ -108,7 +108,7 @@ func failedJobsCheck(st *store.State, now time.Time) doctorCheck {
 	var failed []string
 	for _, j := range st.SortedJobs() {
 		if j.Status == store.JobFailed && now.Sub(j.UpdatedAt) < failedJobsWindow {
-			failed = append(failed, j.ID+" ("+out.SafeText(j.Result)+")")
+			failed = append(failed, j.ID+" ("+out.SafeText(dest.Redact(j.Result))+")")
 		}
 	}
 	if len(failed) == 0 {
@@ -122,7 +122,7 @@ func printNotices(w io.Writer, ran []jobRow) {
 	for _, j := range ran {
 		if j.Status == store.JobFailed {
 			fmt.Fprintf(w, "NOTICE: job %s (%s to %s) failed: %s. See `kongkow post status`, fix it, and schedule the post again.\n",
-				j.ID, out.SafeText(j.Post), out.SafeText(j.Dest), out.SafeText(j.Result))
+				j.ID, out.SafeText(j.Post), out.SafeText(j.Dest), out.SafeText(dest.Redact(j.Result)))
 		}
 	}
 }
@@ -141,6 +141,7 @@ func doctorCmd() *cobra.Command {
 			add := func(name string, ok bool, detail string) {
 				r.Checks = append(r.Checks, doctorCheck{name, ok, detail})
 			}
+			scrubSavedResults()
 			st, err := store.Load()
 			add("state", err == nil, store.Home())
 			if err != nil {
