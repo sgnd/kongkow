@@ -162,9 +162,14 @@ func readAudit(limit int) ([]auditEntry, error) {
 	return out, nil
 }
 
+// auditScrubbed is the store meta key set once the audit log was checked
+// for tokens an earlier version wrote, so the check runs once per store.
+const auditScrubbed = "audit_scrubbed_v1"
+
 // scrubAuditLog takes bot tokens out of the audit entries that an earlier
 // version wrote (it saved the failed request's URL, token included). The
-// rewrite keeps the chain whole and lands in one write step.
+// rewrite keeps the chain whole, leaves one "audit redact" entry that says
+// it happened, and lands in one write step. It runs once per store.
 func scrubAuditLog() {
 	if g.dryRun {
 		return
@@ -173,24 +178,35 @@ func scrubAuditLog() {
 	if err != nil {
 		return
 	}
-	needs := false
+	done := false
 	_ = d.View(context.Background(), func(tx *sealdb.Tx) error {
-		rows, err := tx.Audit(0, 1<<30)
-		for _, r := range rows {
-			if dest.Redact(string(r.Data)) != string(r.Data) {
-				needs = true
-			}
-		}
+		v, err := tx.Meta(auditScrubbed)
+		done = v == "1"
 		return err
 	})
-	if !needs {
+	if done {
 		return
 	}
 	if d, err = store.DB(true); err != nil {
 		return
 	}
 	_ = d.Update(context.Background(), func(tx *sealdb.Tx) error {
-		_, err := tx.RewriteAudit(func(b []byte) []byte { return []byte(dest.Redact(string(b))) })
-		return err
+		n, from, err := tx.RedactAudit()
+		if err != nil {
+			return err
+		}
+		if n > 0 {
+			b, err := json.Marshal(map[string]any{
+				"ts": time.Now().UTC().Format(time.RFC3339), "command": "audit redact",
+				"ok": true, "entries": n, "from_seq": from,
+			})
+			if err != nil {
+				return err
+			}
+			if err := tx.AppendAudit(b); err != nil {
+				return err
+			}
+		}
+		return tx.SetMeta(auditScrubbed, "1")
 	})
 }

@@ -3,18 +3,12 @@ package dest
 import (
 	"errors"
 	"net/url"
-	"regexp"
+
+	"github.com/sgnd/kongkow/internal/redact"
 )
 
-// botToken matches the token part of a Telegram bot URL: /bot<digits>:<secret>.
-var botToken = regexp.MustCompile(`(/bot)[0-9]+:[A-Za-z0-9_-]+`)
-
-// Redact hides a Telegram bot token in s. Telegram puts the token in the URL
-// path, and Go prints the whole URL of a failed request, so any text that came
-// from an error may hold one.
-func Redact(s string) string {
-	return botToken.ReplaceAllString(s, "${1}<redacted>")
-}
+// Redact hides a Telegram bot token in s (see redact.Token).
+func Redact(s string) string { return redact.Token(s) }
 
 // scrubErr removes a token from the URL that a failed request's error carries.
 func scrubErr(err error) error {

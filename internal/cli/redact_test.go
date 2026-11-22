@@ -11,6 +11,7 @@ import (
 
 	"github.com/sgnd/kongkow/internal/dest"
 	"github.com/sgnd/kongkow/internal/out"
+	"github.com/sgnd/kongkow/internal/sealdb"
 	"github.com/sgnd/kongkow/internal/store"
 )
 
@@ -123,5 +124,71 @@ func TestAuditTextShowsTheError(t *testing.T) {
 	noToken(t, "audit text", got)
 	if !strings.Contains(got, "sendMessage") {
 		t.Errorf("a failed entry should say why: %q", got)
+	}
+}
+
+// Audit LOW 1: a rewrite leaves one normal entry that says it happened.
+func TestAuditRedactLeavesOneTrace(t *testing.T) {
+	setupJobs(t)
+	if err := writeAudit(map[string]any{"command": "post draft", "ok": true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeAudit(map[string]any{"command": "post publish", "ok": false, "error": leaky}); err != nil {
+		t.Fatal(err)
+	}
+	runJSON(t, 0, "audit", "--limit", "0")
+	runJSON(t, 0, "audit", "--limit", "0")
+	entries, err := readAudit(0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var leakSeq int64
+	for _, e := range entries {
+		if e.Rec["command"] == "post publish" {
+			leakSeq = e.Seq
+		}
+	}
+	traces := 0
+	for _, e := range entries {
+		if e.Rec["command"] == "audit redact" {
+			traces++
+			if e.Rec["entries"] != float64(1) || e.Rec["from_seq"] != float64(leakSeq) {
+				t.Errorf("trace %v", e.Rec)
+			}
+		}
+	}
+	if traces != 1 {
+		t.Fatalf("%d redact traces, want 1", traces)
+	}
+}
+
+// Audit LOW 3: the scrub runs once per store, not on every command.
+func TestAuditScrubRunsOnce(t *testing.T) {
+	setupJobs(t)
+	if err := writeAudit(map[string]any{"command": "post draft", "ok": true}); err != nil {
+		t.Fatal(err)
+	}
+	runJSON(t, 0, "audit", "--limit", "0") // nothing to clean; marks the store done
+	if err := writeAudit(map[string]any{"command": "post publish", "ok": false, "error": leaky}); err != nil {
+		t.Fatal(err)
+	}
+	runJSON(t, 0, "audit", "--limit", "0")
+	// read the stored rows directly: readAudit hides tokens on display
+	d, err := store.DB(false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var last string
+	if err := d.View(context.Background(), func(tx *sealdb.Tx) error {
+		rows, err := tx.Audit(0, 1<<30)
+		if len(rows) > 0 {
+			last = string(rows[len(rows)-1].Data)
+		}
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(last, fakeBotToken) {
+		t.Fatal("the scrub ran a second time")
 	}
 }

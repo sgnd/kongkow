@@ -5,7 +5,7 @@ the release workflow takes its notes from that section.
 
 ## v0.2.0 - 2026-11-22
 
-Update now. Earlier versions could save and print your Telegram bot token when a send failed with a network error. Rotate the bot token with BotFather if any Telegram send ever failed.
+Update now. Earlier versions could save and print your Telegram bot token when a send failed with a network error. This version removes it from saved jobs and the audit log. If any Telegram send ever failed, rotate the bot token with BotFather, and delete older kongkow backups.
 
 - `guide install`: teaches Claude Code (`~/.claude/skills`), Codex, Cursor and Gemini CLI (`~/.agents/skills`) to use kongkow. `--project` installs into the current folder, `--dry-run` shows the plan, and a changed file is kept as `.bak`. It writes those two files and sends nothing anywhere. It adds no guard hook: kongkow protects `~/.kongkow` itself.
 - Publish proof: `post publish` and `post status` show the live link of each post (Mastodon, Bluesky, a public Telegram channel) or the file path. A private Telegram chat shows the message number. The link is stored on the job.

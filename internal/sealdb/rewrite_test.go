@@ -1,29 +1,30 @@
 package sealdb
 
 import (
-	"bytes"
 	"context"
 	"path/filepath"
 	"testing"
 )
 
-func scrub(b []byte) []byte { return bytes.ReplaceAll(b, []byte("SECRET"), []byte("<redacted>")) }
+// tok is a made-up Telegram bot token, not a real one.
+const tok = "/bot123456:FAKEtokenABCdef_ghi-jkl"
 
 func TestRewriteAuditKeepsTheChain(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "store.db")
 	d := openTest(t, path)
-	appendN(t, d, "one", "two SECRET here", "three", "four SECRET")
+	appendN(t, d, "one", "two "+tok+" here", "three", "four "+tok)
 
 	var n int
+	var from int64
 	if err := d.Update(context.Background(), func(tx *Tx) error {
 		var err error
-		n, err = tx.RewriteAudit(scrub)
+		n, from, err = tx.RedactAudit()
 		return err
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if n != 2 {
-		t.Errorf("rewrote %d entries, want 2", n)
+	if n != 2 || from != 2 {
+		t.Errorf("rewrote %d entries from %d, want 2 from 2", n, from)
 	}
 	appendN(t, d, "five") // the head must still fit
 	d.Close()
@@ -34,7 +35,7 @@ func TestRewriteAuditKeepsTheChain(t *testing.T) {
 	if err != nil {
 		t.Fatalf("chain broken after the rewrite: %v", err)
 	}
-	want := []string{"one", "two <redacted> here", "three", "four <redacted>", "five"}
+	want := []string{"one", "two /bot<redacted> here", "three", "four /bot<redacted>", "five"}
 	if len(rows) != len(want) {
 		t.Fatalf("rows %d, want %d", len(rows), len(want))
 	}
@@ -57,7 +58,7 @@ func TestRewriteAuditWithNothingToChangeWritesNothing(t *testing.T) {
 	var n int
 	if err := d.Update(context.Background(), func(tx *Tx) error {
 		var err error
-		n, err = tx.RewriteAudit(scrub)
+		n, _, err = tx.RedactAudit()
 		return err
 	}); err != nil || n != 0 {
 		t.Fatalf("n %d err %v", n, err)
@@ -72,7 +73,7 @@ func TestRewriteAuditNeedsAWriteStep(t *testing.T) {
 	d := openTest(t, filepath.Join(t.TempDir(), "store.db"))
 	defer d.Close()
 	appendN(t, d, "one")
-	err := d.View(context.Background(), func(tx *Tx) error { _, err := tx.RewriteAudit(scrub); return err })
+	err := d.View(context.Background(), func(tx *Tx) error { _, _, err := tx.RedactAudit(); return err })
 	if err != ErrReadOnly {
 		t.Errorf("err %v, want ErrReadOnly", err)
 	}
