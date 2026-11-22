@@ -556,6 +556,7 @@ func postStatusCmd() *cobra.Command {
 				if err != nil {
 					return err
 				}
+				printNotices(os.Stderr, ran)
 			}
 			st, err := store.Load()
 			if err != nil {
@@ -602,6 +603,7 @@ func watchJobs(ctx context.Context, every time.Duration) error {
 		}
 		if len(ran) > 0 {
 			out.P.Print("post status", statusResult{Jobs: []jobRow{}, Ran: ran}, nil)
+			printNotices(os.Stderr, ran)
 		}
 		select {
 		case <-ctx.Done():
