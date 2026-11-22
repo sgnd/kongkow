@@ -3,12 +3,14 @@ package cli
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/sgnd/kongkow/internal/dest"
+	"github.com/sgnd/kongkow/internal/out"
 	"github.com/sgnd/kongkow/internal/store"
 )
 
@@ -72,5 +74,54 @@ func TestScrubSavedResults(t *testing.T) {
 	}
 	if !strings.Contains(st.Jobs["old"].Result, "sendMessage") {
 		t.Errorf("the scrubbed result lost its meaning: %q", st.Jobs["old"].Result)
+	}
+}
+
+// Audit entries written by v0.0.1 to v0.1.1 may hold a token in "error".
+func TestAuditHidesAndScrubsOldTokens(t *testing.T) {
+	setupJobs(t)
+	if err := writeAudit(map[string]any{"ts": "2026-11-18T00:00:00Z", "command": "post publish", "ok": false, "error": leaky}); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeAudit(map[string]any{"ts": "2026-11-18T00:00:01Z", "command": "post draft", "ok": true}); err != nil {
+		t.Fatal(err)
+	}
+
+	env := runJSON(t, 0, "audit", "--limit", "0")
+	b, _ := json.Marshal(env)
+	noToken(t, "audit JSON", string(b))
+	if !strings.Contains(string(b), "sendMessage") {
+		t.Errorf("the entry lost its meaning: %s", b)
+	}
+
+	resetOut()
+	var text bytes.Buffer
+	out.P.W = &text
+	out.P.Format = "text"
+	if code := executeArgs([]string{"audit", "--limit", "0", "-o", "text"}); code != 0 {
+		t.Fatalf("audit text exit %d", code)
+	}
+	noToken(t, "audit text", text.String())
+
+	// the stored entries are clean too, and the log still reads as a whole
+	entries, err := readAudit(0)
+	if err != nil {
+		t.Fatalf("audit log broken after the scrub: %v", err)
+	}
+	for _, e := range entries {
+		raw, _ := json.Marshal(e.Rec)
+		noToken(t, "stored audit entry", string(raw))
+	}
+	if len(entries) < 2 {
+		t.Errorf("entries %d", len(entries))
+	}
+}
+
+func TestAuditTextShowsTheError(t *testing.T) {
+	r := auditResult{Entries: []auditEntry{{Seq: 1, Rec: map[string]any{"command": "post publish", "ok": false, "error": leaky}}}}
+	got := r.Text()
+	noToken(t, "audit text", got)
+	if !strings.Contains(got, "sendMessage") {
+		t.Errorf("a failed entry should say why: %q", got)
 	}
 }

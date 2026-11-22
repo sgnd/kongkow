@@ -530,6 +530,7 @@ func rowOf(j *store.Job) jobRow {
 // scrubSavedResults removes bot tokens from the results that an earlier
 // version saved on failed jobs (it put the request URL in the error text).
 func scrubSavedResults() {
+	scrubAuditLog()
 	st, err := store.Load()
 	if err != nil {
 		return

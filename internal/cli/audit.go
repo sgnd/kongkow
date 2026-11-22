@@ -10,6 +10,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/sgnd/kongkow/internal/dest"
 	"github.com/sgnd/kongkow/internal/out"
 	"github.com/sgnd/kongkow/internal/sealdb"
 	"github.com/sgnd/kongkow/internal/store"
@@ -73,7 +74,11 @@ func (r auditResult) Text() string {
 		if !ok {
 			mark = "fail"
 		}
-		fmt.Fprintf(&b, "%d  %s  %s  %s\n", e.Seq, e.Time.Local().Format("2006-01-02 15:04:05"), mark, cmd)
+		line := fmt.Sprintf("%d  %s  %s  %s", e.Seq, e.Time.Local().Format("2006-01-02 15:04:05"), mark, out.SafeText(cmd))
+		if msg, _ := e.Rec["error"].(string); msg != "" && !ok {
+			line += "  " + out.SafeText(dest.Redact(msg))
+		}
+		b.WriteString(line + "\n")
 	}
 	return b.String()
 }
@@ -88,6 +93,7 @@ func auditCmd() *cobra.Command {
 			if limit < 0 {
 				return out.Usage("--limit cannot be negative")
 			}
+			scrubAuditLog()
 			entries, err := readAudit(limit)
 			if err != nil {
 				return err
@@ -137,7 +143,12 @@ func readAudit(limit int) ([]auditEntry, error) {
 	for _, r := range rows {
 		var m map[string]any
 		if err := json.Unmarshal(r.Data, &m); err != nil {
-			m = map[string]any{"raw": string(r.Data)}
+			m = map[string]any{"raw": dest.Redact(string(r.Data))}
+		}
+		for k, v := range m {
+			if s, ok := v.(string); ok {
+				m[k] = dest.Redact(s)
+			}
 		}
 		out = append(out, auditEntry{Seq: r.Seq, Time: r.Time, Rec: m})
 	}
@@ -149,4 +160,37 @@ func readAudit(limit int) ([]auditEntry, error) {
 		out = out[:limit]
 	}
 	return out, nil
+}
+
+// scrubAuditLog takes bot tokens out of the audit entries that an earlier
+// version wrote (it saved the failed request's URL, token included). The
+// rewrite keeps the chain whole and lands in one write step.
+func scrubAuditLog() {
+	if g.dryRun {
+		return
+	}
+	d, err := store.DB(false)
+	if err != nil {
+		return
+	}
+	needs := false
+	_ = d.View(context.Background(), func(tx *sealdb.Tx) error {
+		rows, err := tx.Audit(0, 1<<30)
+		for _, r := range rows {
+			if dest.Redact(string(r.Data)) != string(r.Data) {
+				needs = true
+			}
+		}
+		return err
+	})
+	if !needs {
+		return
+	}
+	if d, err = store.DB(true); err != nil {
+		return
+	}
+	_ = d.Update(context.Background(), func(tx *sealdb.Tx) error {
+		_, err := tx.RewriteAudit(func(b []byte) []byte { return []byte(dest.Redact(string(b))) })
+		return err
+	})
 }
