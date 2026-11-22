@@ -87,7 +87,7 @@ func tokenChecks(ctx context.Context, st *store.State, test func(context.Context
 	for _, n := range names {
 		d := st.Dests[n]
 		if d == nil {
-			checks = append(checks, doctorCheck{"token " + n, false, "a scheduled job names the destination "+out.SafeText(n)+", which no longer exists; cancel the job with `kongkow post cancel JOB`"})
+			checks = append(checks, doctorCheck{"token " + n, false, "a scheduled job names the destination " + out.SafeText(n) + ", which no longer exists; cancel the job with `kongkow post cancel JOB`"})
 			continue
 		}
 		cctx, cancel := context.WithTimeout(ctx, tokenTestTimeout)
