@@ -103,6 +103,7 @@ type Job struct {
 	At        time.Time `json:"at"`
 	Status    string    `json:"status"` // pending | done | failed | cancelled
 	Result    string    `json:"result,omitempty"`
+	URL       string    `json:"url,omitempty"` // the live post, when the destination has a public page
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	Rec       Rec       `json:"-"`
