@@ -123,7 +123,7 @@ func publishMastodon(ctx context.Context, d *store.Dest, c Content, resolve Reso
 	if err := jsonCall(ctx, http.MethodPost, base+"/api/v1/statuses", tok, payload, &res); err != nil {
 		return nil, fmt.Errorf("mastodon: %w", err)
 	}
-	return &Result{Dest: d.Name, Kind: d.Kind, Target: base, Detail: "posted " + res.URL}, nil
+	return &Result{Dest: d.Name, Kind: d.Kind, Target: base, URL: res.URL, Detail: "posted " + res.URL}, nil
 }
 
 func testMastodon(ctx context.Context, d *store.Dest, resolve ResolveToken) (*Result, error) {
@@ -202,7 +202,7 @@ func publishBluesky(ctx context.Context, d *store.Dest, c Content, resolve Resol
 	if err := jsonCall(ctx, http.MethodPost, bskyService+"/xrpc/com.atproto.repo.createRecord", s.AccessJwt, body, &res); err != nil {
 		return nil, fmt.Errorf("bluesky: %w", err)
 	}
-	return &Result{Dest: d.Name, Kind: d.Kind, Target: d.Target, Detail: "posted " + res.URI}, nil
+	return &Result{Dest: d.Name, Kind: d.Kind, Target: d.Target, URL: blueskyURL(res.URI, s.Handle), Detail: "posted " + res.URI}, nil
 }
 
 func testBluesky(ctx context.Context, d *store.Dest, resolve ResolveToken) (*Result, error) {
@@ -266,4 +266,22 @@ func rawCall(ctx context.Context, method, u, bearer, contentType string, body io
 		}
 	}
 	return nil
+}
+
+// blueskyURL is the web address of a post from its at:// URI. who is the
+// account's handle; without one the DID in the URI stands in. Anything that
+// is not an at:// post URI gives "".
+func blueskyURL(uri, who string) string {
+	rest, ok := strings.CutPrefix(uri, "at://")
+	if !ok {
+		return ""
+	}
+	parts := strings.Split(rest, "/")
+	if len(parts) != 3 || parts[0] == "" || parts[1] != "app.bsky.feed.post" || parts[2] == "" {
+		return ""
+	}
+	if who == "" {
+		who = parts[0]
+	}
+	return "https://bsky.app/profile/" + who + "/post/" + parts[2]
 }

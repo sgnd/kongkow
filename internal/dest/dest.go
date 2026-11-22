@@ -28,6 +28,7 @@ type Result struct {
 	Kind   string `json:"kind"`
 	Target string `json:"target,omitempty"`
 	Path   string `json:"path,omitempty"`
+	URL    string `json:"url,omitempty"` // the live post, when it has a public page
 	Detail string `json:"detail,omitempty"`
 }
 
