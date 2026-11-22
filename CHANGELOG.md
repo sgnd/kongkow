@@ -1,9 +1,18 @@
 # Changelog
 
-All notable changes to kongkow. Each release has a section `## [X.Y.Z]`;
+All notable changes to kongkow. Each release has a section `## vX.Y.Z - YYYY-MM-DD`;
 the release workflow takes its notes from that section.
 
-## [0.1.1] - 2026-11-18
+## v0.2.0 - 2026-11-22
+
+- `guide install`: teaches Claude Code (`~/.claude/skills`), Codex, Cursor and Gemini CLI (`~/.agents/skills`) to use kongkow. `--project` installs into the current folder, `--dry-run` shows the plan, and a changed file is kept as `.bak`. It writes those two files and sends nothing anywhere. It adds no guard hook: kongkow protects `~/.kongkow` itself.
+- Publish proof: `post publish` and `post status` show the live link of each post (Mastodon, Bluesky, a public Telegram channel) or the file path. A private Telegram chat shows the message number. The link is stored on the job.
+- `doctor` tests the token of every destination that has a scheduled post, so a dead token shows up before the post is due (`--offline` skips it), and lists jobs that failed in the last 7 days.
+- A scheduled job that fails writes a `NOTICE` line to stderr when `post status --run` finds it.
+- `skills/kongkow/SKILL.md`, `AGENTS.md` and the README list exactly the commands the binary has; a test fails when they drift. The skill no longer says "when releases exist".
+- Release headings are `## vX.Y.Z` and the release title is the tag.
+
+## v0.1.1 - 2026-11-18
 
 Please update. In v0.1.0, setting `HOME` could move an AI agent's store
 past the `KONGKOW_HOME` guard. v0.1.1 fixes it.
@@ -17,7 +26,7 @@ past the `KONGKOW_HOME` guard. v0.1.1 fixes it.
   the same second used to share one name; the second now gets `_2`.
 - CI runs the built binary through its main commands (`scripts/smoke.sh`).
 
-## [0.1.0]
+## v0.1.0 - 2026-11-18
 
 - Images in `--media` are uploaded to Mastodon and Bluesky (up to 4 JPEG,
   PNG, GIF or WebP files; 1 MB each on Bluesky). Every file is checked
@@ -31,7 +40,7 @@ past the `KONGKOW_HOME` guard. v0.1.1 fixes it.
 - An AI agent's kongkow stops when `KONGKOW_HOME` names another folder
   than `~/.kongkow`. Any agent variable that is set counts, even empty.
 
-## [0.0.1]
+## v0.0.1 - 2026-11-18
 
 - Publish to Mastodon (instance + access token) and Bluesky (handle + app
   password). Text limits (500 and 300 characters) are checked before
