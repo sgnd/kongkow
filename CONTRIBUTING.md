@@ -5,8 +5,8 @@ Thank you for helping. Please write issues, pull requests and docs in English.
 kongkow is open source under the [AGPL-3.0](LICENSE), and is also sold under a
 [commercial license](COMMERCIAL-LICENSE.md) that pays for its work. Before your
 first pull request is merged, please sign the
-[Contributor License Agreement](CLA.md): a bot asks you on the pull request, and
-you sign once by writing a comment. You keep the copyright of what you wrote.
+[Contributor License Agreement](CLA.md): put its
+sentence in the pull request description, and a check looks for it. You keep the copyright of what you wrote.
 
 kongkow is a local-first CLI for drafts and publish destinations, for people and
 their AI agents. It stays simple on purpose: one static binary, no menus or
