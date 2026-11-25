@@ -71,6 +71,16 @@ komando: an open-source CLI first, then paid apps and a paid cloud.
 | No-telemetry statement in README and SECURITY.md | done |
 | Guard: an agent's kongkow refuses another `KONGKOW_HOME` without a person's yes (SECURITY.md says "when that guard lands") | done: final stop, exit 6, no flag |
 
+## Milestone 5: command structure v1 (v0.3.0)
+
+| Item | Status |
+|---|---|
+| Spec: [design/command-structure-v1.md](design/command-structure-v1.md) ([#19](https://github.com/sgnd/kongkow/issues/19)) | done: spec written; not built |
+| `schema` command and the tree test | open |
+| Person-only table with its test | open |
+| New tree, contract 2 output, store migration | open |
+| Skill, AGENTS.md, README and docs with the new names | open |
+
 ## Paid plan (after the CLI is solid)
 
 | Item | Status |
