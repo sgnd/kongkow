@@ -5,6 +5,7 @@ safe when in doubt, and every error says what to do next.**
 
 Related: [command-standard.md](command-standard.md), [message-style.md](message-style.md),
 [code-layout.md](code-layout.md), [extensions.md](extensions.md).
+Planned: [command-structure-v1.md](command-structure-v1.md), the tree of v0.3.0.
 
 ## 1. What kongkow is
 
