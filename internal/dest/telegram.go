@@ -56,10 +56,24 @@ func publishTelegram(ctx context.Context, d *store.Dest, c Content, resolve Reso
 	if parseMode != "" {
 		payload["parse_mode"] = parseMode
 	}
-	if err := tgCall(ctx, token, "sendMessage", payload, nil); err != nil {
+	var sent struct {
+		MessageID int64 `json:"message_id"`
+		Chat      struct {
+			Username string `json:"username"`
+		} `json:"chat"`
+	}
+	if err := tgCall(ctx, token, "sendMessage", payload, &sent); err != nil {
 		return nil, err
 	}
-	return &Result{Dest: d.Name, Kind: d.Kind, Target: d.Target, Detail: "sent message"}, nil
+	r := &Result{Dest: d.Name, Kind: d.Kind, Target: d.Target, Detail: "sent message"}
+	if sent.MessageID > 0 {
+		r.Detail = fmt.Sprintf("sent message %d", sent.MessageID)
+		// only a public channel or group has a page anyone can open
+		if sent.Chat.Username != "" {
+			r.URL = fmt.Sprintf("https://t.me/%s/%d", sent.Chat.Username, sent.MessageID)
+		}
+	}
+	return r, nil
 }
 
 func tgCall(ctx context.Context, token, method string, payload any, out any) error {
@@ -81,7 +95,7 @@ func tgCall(ctx context.Context, token, method string, payload any, out any) err
 	}
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return err
+		return scrubErr(err)
 	}
 	defer resp.Body.Close()
 	raw, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))

@@ -18,6 +18,7 @@ Start
   kongkow list                 posts, destinations, collections, bookmarks
   kongkow doctor               check the store and vault
   kongkow guide                this playbook
+  kongkow guide install        teach Claude Code, Codex, Cursor and Gemini CLI to use kongkow
 
 Posts
   kongkow post draft NAME --title T --body '...' [--media a,b [--alt TEXT]...] [--collection C]
@@ -80,7 +81,7 @@ type guideResult struct {
 func (g guideResult) Text() string { return g.TextBody }
 
 func guideCmd() *cobra.Command {
-	return &cobra.Command{
+	c := &cobra.Command{
 		Use:   "guide",
 		Short: "Print the kongkow playbook for people and agents",
 		Args:  cobra.MaximumNArgs(1),
@@ -96,4 +97,6 @@ func guideCmd() *cobra.Command {
 			return nil
 		},
 	}
+	c.AddCommand(guideInstallCmd())
+	return c
 }

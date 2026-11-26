@@ -75,17 +75,51 @@ kongkow dest add bsky --kind bluesky --target you.bsky.social --secret-ref secre
 kongkow post publish hello --to masto,bsky --dry-run
 ```
 
+## Commands
+
+| Command | What it does |
+|---|---|
+| `post draft / compose / edit / list / show / rm` | Write and keep posts, with images and alt text |
+| `post publish` | Send a post to one or more destinations; prints the live link of each |
+| `post schedule / queue / cancel / status` | Schedule a post, take the next daily slot, cancel, and list jobs (`status --run` sends the due ones and shows each live link) |
+| `dest add / edit / list / show / rm / test` | Telegram, Mastodon, Bluesky and file destinations |
+| `secret set / list / show / rm` | The encrypted vault for tokens |
+| `collection add / list / show / rm` | Group posts |
+| `bookmark add / list / show / rm` | Keep links |
+| `audit` | The local record of what was published or changed |
+| `doctor` | Check the store, the vault and the token of every destination with a scheduled post (`--offline` skips the token test) |
+| `guide install` | Teach Claude Code, Codex, Cursor and Gemini CLI to use kongkow |
+| `version` / `list` / `guide` / `completion` | About kongkow, the playbook, shell completion |
+
 ## Run the scheduler
 
 `kongkow post status --run --every 1m` sends scheduled posts on time.
 Run it under launchd or systemd on your own machine:
 [docs/self-host.md](docs/self-host.md).
 
+Every post that goes out keeps its proof: the live link (Mastodon, Bluesky,
+a public Telegram channel) or the file path, shown by `post status`. A job
+that fails writes a `NOTICE` line to stderr, and `kongkow doctor` lists
+failures of the last 7 days and tests the token of every destination that
+has a scheduled post, so a dead token shows up before the post is due.
+
 ## Privacy
 
 No telemetry. kongkow sends nothing except the publishes you ask for.
 
 ## Agents
+
+```bash
+kongkow guide install            # Claude Code, Codex, Cursor, Gemini CLI
+kongkow guide install --project  # only for the folder you are in
+kongkow guide install --dry-run  # show where it would write
+```
+
+It writes the kongkow skill to `~/.claude/skills/kongkow/SKILL.md` (Claude
+Code) and `~/.agents/skills/kongkow/SKILL.md` (Codex, Cursor, Gemini CLI and
+others), and nothing else. It sends nothing anywhere. Unlike komando's
+installer it adds no guard hook: kongkow protects `~/.kongkow` itself. Run it
+again after an update: a changed file is kept as `.bak`.
 
 See [AGENTS.md](AGENTS.md) and `skills/kongkow/SKILL.md`. Prefer `-o json`,
 never add `--yes` or `--reveal` on your own, and do not read `~/.kongkow`.

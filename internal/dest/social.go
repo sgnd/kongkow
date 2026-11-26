@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -123,7 +124,12 @@ func publishMastodon(ctx context.Context, d *store.Dest, c Content, resolve Reso
 	if err := jsonCall(ctx, http.MethodPost, base+"/api/v1/statuses", tok, payload, &res); err != nil {
 		return nil, fmt.Errorf("mastodon: %w", err)
 	}
-	return &Result{Dest: d.Name, Kind: d.Kind, Target: base, Detail: "posted " + res.URL}, nil
+	link := sameHostHTTPS(base, res.URL)
+	detail := "posted"
+	if link != "" {
+		detail += " " + link
+	}
+	return &Result{Dest: d.Name, Kind: d.Kind, Target: base, URL: link, Detail: detail}, nil
 }
 
 func testMastodon(ctx context.Context, d *store.Dest, resolve ResolveToken) (*Result, error) {
@@ -202,7 +208,7 @@ func publishBluesky(ctx context.Context, d *store.Dest, c Content, resolve Resol
 	if err := jsonCall(ctx, http.MethodPost, bskyService+"/xrpc/com.atproto.repo.createRecord", s.AccessJwt, body, &res); err != nil {
 		return nil, fmt.Errorf("bluesky: %w", err)
 	}
-	return &Result{Dest: d.Name, Kind: d.Kind, Target: d.Target, Detail: "posted " + res.URI}, nil
+	return &Result{Dest: d.Name, Kind: d.Kind, Target: d.Target, URL: blueskyURL(res.URI, s.Handle), Detail: "posted " + res.URI}, nil
 }
 
 func testBluesky(ctx context.Context, d *store.Dest, resolve ResolveToken) (*Result, error) {
@@ -241,7 +247,7 @@ func rawCall(ctx context.Context, method, u, bearer, contentType string, body io
 	}
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return err
+		return scrubErr(err)
 	}
 	defer resp.Body.Close()
 	raw, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
@@ -266,4 +272,28 @@ func rawCall(ctx context.Context, method, u, bearer, contentType string, body io
 		}
 	}
 	return nil
+}
+
+// bskyID is what a DID, a handle or a record key may hold.
+var bskyID = regexp.MustCompile(`^[A-Za-z0-9:._-]+$`)
+
+// blueskyURL is the web address of a post from its at:// URI. who is the
+// account's handle; without one the DID in the URI stands in. Anything that
+// is not an at:// post URI gives "".
+func blueskyURL(uri, who string) string {
+	rest, ok := strings.CutPrefix(uri, "at://")
+	if !ok {
+		return ""
+	}
+	parts := strings.Split(rest, "/")
+	if len(parts) != 3 || parts[1] != "app.bsky.feed.post" || !bskyID.MatchString(parts[0]) || !bskyID.MatchString(parts[2]) {
+		return ""
+	}
+	if who == "" {
+		who = parts[0]
+	}
+	if !bskyID.MatchString(who) {
+		return ""
+	}
+	return "https://bsky.app/profile/" + who + "/post/" + parts[2]
 }

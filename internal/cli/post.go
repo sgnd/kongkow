@@ -326,17 +326,14 @@ func postPublishCmd() *cobra.Command {
 				if err != nil {
 					failed++
 					lastErr = err
-					audit(st, "post publish", false, map[string]any{"name": p.Name, "dest": d.Name, "error": err.Error()})
+					audit(st, "post publish", false, map[string]any{"name": p.Name, "dest": d.Name, "error": dest.Redact(err.Error())})
 					rows = append(rows, map[string]any{
-						"name": p.Name, "dest": d.Name, "kind": d.Kind, "action": "failed", "error": err.Error(),
+						"name": p.Name, "dest": d.Name, "kind": d.Kind, "action": "failed", "error": dest.Redact(err.Error()),
 					})
 					continue
 				}
 				audit(st, "post publish", true, map[string]any{"name": p.Name, "dest": d.Name, "kind": d.Kind})
-				rows = append(rows, map[string]any{
-					"name": p.Name, "dest": d.Name, "kind": d.Kind, "action": "published",
-					"path": res.Path, "detail": res.Detail, "target": res.Target,
-				})
+				rows = append(rows, publishedRow(p.Name, d, res))
 			}
 			if len(dests) == 1 && lastErr != nil {
 				return lastErr
@@ -456,6 +453,7 @@ type jobRow struct {
 	At     time.Time `json:"at"`
 	Status string    `json:"status"`
 	Result string    `json:"result,omitempty"`
+	URL    string    `json:"url,omitempty"`
 }
 
 type statusResult struct {
@@ -469,7 +467,7 @@ func (r statusResult) Text() string {
 	if len(r.Ran) > 0 {
 		b.WriteString("Ran:\n")
 		for _, j := range r.Ran {
-			fmt.Fprintf(&b, "  %s  %s → %s  %s  %s\n", j.ID, j.Post, j.Dest, j.Status, j.Result)
+			b.WriteString("  " + jobLine(j, false))
 		}
 	}
 	if len(r.Jobs) == 0 {
@@ -477,9 +475,81 @@ func (r statusResult) Text() string {
 		return b.String()
 	}
 	for _, j := range r.Jobs {
-		fmt.Fprintf(&b, "%s  %s → %s  %s  %s\n", j.ID, j.Post, j.Dest, j.At.Local().Format("2006-01-02 15:04"), j.Status)
+		b.WriteString(jobLine(j, true))
 	}
 	return b.String()
+}
+
+// jobLine is one job for people: what it was, when, how it ended, and the
+// proof (the live link, the file, or the reason it failed). The proof can
+// come from a remote server, so control characters are dropped.
+func jobLine(j jobRow, withTime bool) string {
+	when := ""
+	if withTime {
+		when = j.At.Local().Format("2006-01-02 15:04") + "  "
+	}
+	line := fmt.Sprintf("%s  %s → %s  %s%s", j.ID, j.Post, j.Dest, when, j.Status)
+	switch {
+	case j.URL != "":
+		line += "  " + out.SafeText(j.URL)
+	case j.Result != "" && j.Status != store.JobPending:
+		line += "  " + out.SafeText(dest.Redact(j.Result))
+	}
+	return line + "\n"
+}
+
+// publishedRow is the row `post publish` prints for one destination.
+func publishedRow(post string, d *store.Dest, res *dest.Result) map[string]any {
+	row := map[string]any{
+		"name": post, "dest": d.Name, "kind": d.Kind, "action": "published",
+		"path": res.Path, "detail": res.Detail, "target": res.Target,
+	}
+	if res.URL != "" {
+		row["url"] = res.URL
+	}
+	return row
+}
+
+// applyResult records how a publish attempt ended on its job.
+func applyResult(j *store.Job, res *dest.Result, pubErr error, now time.Time) {
+	j.UpdatedAt = now
+	if pubErr != nil {
+		j.Status, j.Result, j.URL = store.JobFailed, dest.Redact(pubErr.Error()), ""
+		return
+	}
+	j.Status, j.Result, j.URL = store.JobDone, res.Detail, res.URL
+	if res.Path != "" {
+		j.Result = res.Path
+	}
+}
+
+func rowOf(j *store.Job) jobRow {
+	return jobRow{ID: j.ID, Post: j.Post, Dest: j.Dest, At: j.At, Status: j.Status, Result: dest.Redact(j.Result), URL: j.URL}
+}
+
+// scrubSavedResults removes bot tokens from the results that an earlier
+// version saved on failed jobs (it put the request URL in the error text).
+func scrubSavedResults() {
+	scrubAuditLog()
+	st, err := store.Load()
+	if err != nil {
+		return
+	}
+	dirty := false
+	for _, j := range st.Jobs {
+		if dest.Redact(j.Result) != j.Result {
+			dirty = true
+		}
+	}
+	if !dirty || g.dryRun {
+		return
+	}
+	_ = store.Update(func(s *store.State) error {
+		for _, j := range s.Jobs {
+			j.Result = dest.Redact(j.Result)
+		}
+		return nil
+	})
 }
 
 func postStatusCmd() *cobra.Command {
@@ -504,6 +574,7 @@ func postStatusCmd() *cobra.Command {
 				defer stop()
 				return watchJobs(ctx, every)
 			}
+			scrubSavedResults()
 			var ran []jobRow
 			if run && !g.dryRun {
 				var err error
@@ -511,6 +582,7 @@ func postStatusCmd() *cobra.Command {
 				if err != nil {
 					return err
 				}
+				printNotices(os.Stderr, ran)
 			}
 			st, err := store.Load()
 			if err != nil {
@@ -518,7 +590,7 @@ func postStatusCmd() *cobra.Command {
 			}
 			r := statusResult{Jobs: []jobRow{}, Ran: ran}
 			for _, j := range st.SortedJobs() {
-				r.Jobs = append(r.Jobs, jobRow{ID: j.ID, Post: j.Post, Dest: j.Dest, At: j.At, Status: j.Status, Result: j.Result})
+				r.Jobs = append(r.Jobs, rowOf(j))
 				if j.Status == store.JobPending {
 					r.Pending++
 				}
@@ -557,6 +629,7 @@ func watchJobs(ctx context.Context, every time.Duration) error {
 		}
 		if len(ran) > 0 {
 			out.P.Print("post status", statusResult{Jobs: []jobRow{}, Ran: ran}, nil)
+			printNotices(os.Stderr, ran)
 		}
 		select {
 		case <-ctx.Done():
@@ -635,26 +708,17 @@ func runDueJobs() ([]jobRow, error) {
 			if jj == nil {
 				return nil
 			}
-			jj.UpdatedAt = time.Now().UTC()
-			if pubErr != nil {
-				jj.Status = store.JobFailed
-				jj.Result = pubErr.Error()
-			} else {
-				jj.Status = store.JobDone
-				jj.Result = res.Detail
-				if res.Path != "" {
-					jj.Result = res.Path
-				}
-			}
+			applyResult(jj, res, pubErr, time.Now().UTC())
 			return nil
 		})
 		if pubErr != nil {
 			row.Status = store.JobFailed
-			row.Result = pubErr.Error()
-			audit(st, "post status --run", false, map[string]any{"id": id, "error": pubErr.Error()})
+			row.Result = dest.Redact(pubErr.Error())
+			audit(st, "post status --run", false, map[string]any{"id": id, "error": dest.Redact(pubErr.Error())})
 		} else {
 			row.Status = store.JobDone
 			row.Result = res.Detail
+			row.URL = res.URL
 			if res.Path != "" {
 				row.Result = res.Path
 			}

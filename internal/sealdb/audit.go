@@ -1,6 +1,9 @@
 package sealdb
 
 import (
+	"github.com/sgnd/kongkow/internal/redact"
+
+	"bytes"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/binary"
@@ -160,4 +163,117 @@ func (t *Tx) Audit(after int64, limit int) ([]AuditRow, error) {
 		}
 	}
 	return out, nil
+}
+
+// RedactAudit hides Telegram bot tokens (redact.Token) in every audit entry
+// that an older version wrote. It is the only rewrite of the audit log that
+// kongkow allows; there is no general rewrite. It returns how many entries
+// changed and the number of the first one (0 when none changed).
+func (t *Tx) RedactAudit() (int, int64, error) {
+	return t.rewriteAudit(func(b []byte) []byte { return []byte(redact.Token(string(b))) })
+}
+
+// rewriteAudit passes the data of every audit entry through fn, oldest
+// first, and seals back the entries fn changed. Because each entry holds the
+// sum of the one before it, every entry after the first changed one is
+// sealed again too, and the head moves to the new sum of the last entry.
+// Number, ID and time of each entry stay. It runs in the caller's write step,
+// so it lands whole or not at all. It returns how many entries fn changed.
+//
+// It exists to take secrets out of entries that an older version wrote; the
+// log is checked as it is read, so a damaged log stops it with ErrTampered.
+func (t *Tx) rewriteAudit(fn func(data []byte) []byte) (int, int64, error) {
+	if !t.write {
+		return 0, 0, ErrReadOnly
+	}
+	s, err := t.index()
+	if err != nil {
+		return 0, 0, err
+	}
+	type entry struct {
+		seq, tm int64
+		id      string
+		plain   []byte
+	}
+	rows, err := t.c.QueryContext(t.ctx, `SELECT seq,id,time,data FROM audit ORDER BY seq`)
+	if err != nil {
+		return 0, 0, err
+	}
+	var all []entry
+	var prev *[sumLen]byte
+	want := int64(1)
+	for rows.Next() {
+		var e entry
+		var sealed []byte
+		if err := rows.Scan(&e.seq, &e.id, &e.tm, &sealed); err != nil {
+			rows.Close()
+			return 0, 0, err
+		}
+		if e.seq != want {
+			rows.Close()
+			return 0, 0, fmt.Errorf("audit %d (want %d): %w", e.seq, want, ErrTampered)
+		}
+		want++
+		if e.plain, err = t.openAudit(e.seq, e.tm, e.id, sealed); err != nil {
+			rows.Close()
+			return 0, 0, err
+		}
+		if e.plain[0] == chained && prev != nil && [sumLen]byte(e.plain[headLen:headLen+sumLen]) != *prev {
+			rows.Close()
+			return 0, 0, fmt.Errorf("audit %d: %w", e.seq, ErrTampered)
+		}
+		sum := auditSum(e.seq, e.plain)
+		prev = &sum
+		all = append(all, e)
+	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return 0, 0, err
+	}
+	rows.Close()
+	if len(all) > 0 && (auditHead{seq: all[len(all)-1].seq, sum: *prev}) != s.head {
+		return 0, 0, fmt.Errorf("audit head: %w", ErrTampered)
+	}
+
+	changed := 0
+	var first int64
+	resealing := false
+	var newPrev [sumLen]byte
+	for _, e := range all {
+		dataAt := headLen
+		if e.plain[0] == chained {
+			dataAt += sumLen
+		}
+		data := e.plain[dataAt:]
+		nd := fn(append([]byte(nil), data...))
+		if !bytes.Equal(nd, data) {
+			changed++
+			if first == 0 {
+				first = e.seq
+			}
+			resealing = true
+		}
+		if !resealing {
+			newPrev = auditSum(e.seq, e.plain)
+			continue
+		}
+		plain := append([]byte(nil), e.plain[:headLen]...)
+		if e.plain[0] == chained {
+			plain = append(plain, newPrev[:]...)
+		}
+		plain = append(plain, nd...)
+		sealed, err := t.key.Seal(sealrow.Row{ID: e.id, Type: auditType, Version: uint64(e.seq)}, plain)
+		if err != nil {
+			return 0, 0, err
+		}
+		if _, err := t.c.ExecContext(t.ctx, `UPDATE audit SET data=? WHERE seq=?`, sealed, e.seq); err != nil {
+			return 0, 0, err
+		}
+		newPrev = auditSum(e.seq, plain)
+	}
+	if changed > 0 {
+		s.head = auditHead{seq: all[len(all)-1].seq, sum: newPrev}
+		t.changed = true
+	}
+	return changed, first, nil
 }
